@@ -157,7 +157,7 @@ class DictionaryImporter(object):
                     type_id=db_constants.MORPHEME_TYPES_TO_ID['KANA_ENTRY'],
                     status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])[0]
                 entry_kana.append({'entry_id':entry_id, 'kana_id':kana_id, 'number':i+1})
-        db.insert_many_core(session, models.entry_has_kana, entry_kana)
+        db.insert_many(session, models.EntryHasKana, entry_kana)
 
         # Import kanji
         kanji_list = entry_xml.findall(NAMESPACE_PREFIX + 'kanji')
@@ -175,7 +175,7 @@ class DictionaryImporter(object):
                     type_id=db_constants.MORPHEME_TYPES_TO_ID['KANJI_ENTRY'],
                     status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])[0]
                 entry_kanji.append({'entry_id':entry_id, 'kanji_id':kanji_id, 'number':i+1})
-        db.insert_many_core(session, models.entry_has_kanji, entry_kanji)
+        db.insert_many(session, models.EntryHasKanji, entry_kanji)
 
         # Import definitions
         root_def_xml = entry_xml.find(NAMESPACE_PREFIX + 'definition')
@@ -228,7 +228,7 @@ class DictionaryImporter(object):
                                    'number': i+1})
 
         # Import definition to usage example association
-        db.insert_many_core(session, models.definition_has_ues, definition_ues)
+        db.insert_many(session, models.DefinitionHasUEs, definition_ues)
 
 
         # Import subdefinitions
@@ -337,10 +337,10 @@ def main():
     from noj import init_db
     engine = create_engine('sqlite:///../../test.sqlite', echo=False)
     init_db(engine)
-    schema_path = '../../schema5.xsd'
+    schema_path = '../../schemas/dictionary_schema_1.0.0a.xsd'
     importable_path = '../converters/daijirin2/daijirin2_importable.xml'
     # importable_path = '../converters/jmdict/jmdict-importable.xml'
-    # importable_path = '../../example5.xml'
+    # importable_path = '../../schemas/example_dictionary_1.0.0a.xml'
 
     import progressbar as pb
     widgets = ['Importing: ', pb.Percentage(), ' ', pb.Bar(),

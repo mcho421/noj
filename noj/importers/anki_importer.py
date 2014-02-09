@@ -270,7 +270,8 @@ def main():
                ' ', pb.Timer(), ' ']
 
     session = Session()
-    # importer = AnkiImporter(collection_path, 'Japanese')
+    # importer = AnkiImporter(pm, collection_path, 'Japanese', 
+    #                         expression_field='Expression', meaning_field='Meaning')
     importer = AnkiImporter(pm, collection_path, 'Core 2000 Japanese Vocabulary',
         expression_field='Sentence - Kanji', meaning_field='Sentence - English',
         sound_field='Sentence - Audio')

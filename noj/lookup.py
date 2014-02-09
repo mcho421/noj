@@ -60,7 +60,7 @@ def kanji_query(session, search_word):
 
     # Get the entries matching the kanji
     q_entry_ids = session.query(models.Entry.id).\
-                  join(models.entry_has_kanji).\
+                  join(models.EntryHasKanji).\
                   join(models.Morpheme).\
                   filter(models.Morpheme.morpheme==search_word)
 
@@ -73,7 +73,7 @@ def kana_query(session, search_word):
 
     # Get the entries matching the kana
     q_entry_ids = session.query(models.Entry.id).\
-                  join(models.entry_has_kana).\
+                  join(models.EntryHasKana).\
                   join(models.Morpheme).\
                   filter(models.Morpheme.morpheme==search_word)
 
@@ -82,14 +82,14 @@ def kana_query(session, search_word):
 
 def entry_ues_query(session, entry_ids):
     return session.query(models.UsageExample, models.Entry, models.Definition).\
-           join(models.definition_has_ues).\
+           join(models.DefinitionHasUEs).\
            join(models.Definition).\
            join(models.Entry).\
            filter(models.Entry.id.in_(entry_ids)).\
            options(joinedload_all(models.UsageExample.expression, 
              models.Expression.morpheme_assocs, models.ExpressionConsistsOf.morpheme)).\
-           options(joinedload(models.Entry.kana)).\
-           options(joinedload(models.Entry.kanji)).\
+           options(joinedload_all(models.Entry.kana_assocs, models.EntryHasKana.kana)).\
+           options(joinedload_all(models.Entry.kanji_assocs, models.EntryHasKanji.kanji)).\
            options(joinedload(models.Entry.library))
 
 def search_expressions(session, search_word):
@@ -100,15 +100,19 @@ def search_expressions(session, search_word):
             filter(models.Morpheme.morpheme==search_word).\
             options(joinedload_all(models.UsageExample.expression, 
                 models.Expression.morpheme_assocs, models.ExpressionConsistsOf.morpheme)).\
-            options(joinedload_all(models.UsageExample.definitions,
-                models.Definition.entry, models.Entry.kana)).\
-            options(joinedload_all(models.UsageExample.definitions,
-                models.Definition.entry, models.Entry.kanji)).\
-            options(joinedload_all(models.UsageExample.definitions,
-                models.Definition.entry, models.Entry.library))
+            options(joinedload_all(models.UsageExample.definition_assocs,
+                models.DefinitionHasUEs.definition, models.Definition.entry, 
+                models.Entry.kana_assocs, models.EntryHasKana.kana)).\
+            options(joinedload_all(models.UsageExample.definition_assocs,
+                models.DefinitionHasUEs.definition, models.Definition.entry, 
+                models.Entry.kanji_assocs, models.EntryHasKanji.kanji)).\
+            options(joinedload_all(models.UsageExample.definition_assocs,
+                models.DefinitionHasUEs.definition, models.Definition.entry, 
+                models.Entry.library))
     return q_text.all()
 
 def breadcrumb_string(library, entry, definition_list):
+    # TODO: remove the <EXS> etc. tags?
     parts = list()
     parts.append(library.breadcrumb_string() or '')
     parts.append(entry.breadcrumb_string() or '')
@@ -145,13 +149,13 @@ def main():
     #     print ue.meaning
     #     print breadcrumb_string(entry.library, entry, definition.ancestry())
     #     print
-    #     # break
+        # break
     for ue in ues:
         print ue.get_n_score()
         print ue.expression.expression
         print ue.meaning
-        for d in ue.definitions:
-            print d.breadcrumb_string(), d.entry.breadcrumb_string()
+        for d in ue.definition_assocs:
+            print d.definition.breadcrumb_string(), d.definition.entry.breadcrumb_string()
         print
         break
     logging.warning('done')

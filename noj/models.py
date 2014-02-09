@@ -63,17 +63,31 @@ class LibraryType(Base):
     def __repr__(self):
         return "<LibraryType(%s)>" % (self.name)
 
-entry_has_kanji = Table(
-    'entryhaskanji', Base.metadata,
-    Column('entry_id', Integer, ForeignKey('entries.id'), primary_key=True),
-    Column('kanji_id', Integer, ForeignKey('morphemes.id'), primary_key=True),
-    Column('number', Integer))
+class EntryHasKanji(Base):
+    __tablename__ = 'entryhaskanji'
 
-entry_has_kana = Table(
-    'entryhaskana', Base.metadata,
-    Column('entry_id', Integer, ForeignKey('entries.id'), primary_key=True),
-    Column('kana_id', Integer, ForeignKey('morphemes.id'), primary_key=True),
-    Column('number', Integer))
+    entry_id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
+    kanji_id = Column(Integer, ForeignKey('morphemes.id'), primary_key=True)
+    number = Column(Integer)
+
+    entry = relationship('Entry', backref='kanji_assocs')
+    kanji   = relationship('Morpheme', backref='entry_assocs_on_kanji')
+
+    def __repr__(self):
+        return "<EntryHasKanji('{!r}, {!r}, {!r}')>".format(self.entries, self.kanji, self.number)
+
+class EntryHasKana(Base):
+    __tablename__ = 'entryhaskana'
+
+    entry_id = Column(Integer, ForeignKey('entries.id'), primary_key=True)
+    kana_id = Column(Integer, ForeignKey('morphemes.id'), primary_key=True)
+    number = Column(Integer)
+
+    entry = relationship('Entry', backref='kana_assocs')
+    kana   = relationship('Morpheme', backref='entry_assocs_on_kana')
+
+    def __repr__(self):
+        return "<EntryHasKana('{!r}, {!r}, {!r}')>".format(self.entries, self.kana, self.number)
 
 class Entry(Base):
     """Represents a dictionary entry."""
@@ -92,8 +106,8 @@ class Entry(Base):
 
     library = relationship('Library', backref='entries')
     # kana    = relationship('Morpheme', backref='entries_from_kana')
-    kana   = relationship('Morpheme', secondary=entry_has_kana, backref='entries_from_kana')
-    kanji   = relationship('Morpheme', secondary=entry_has_kanji, backref='entries_from_kanji')
+    # kana   = relationship('Morpheme', secondary=entry_has_kana, backref='entries_from_kana')
+    # kanji   = relationship('Morpheme', secondary=entry_has_kanji, backref='entries_from_kanji')
     format  = relationship('EntryFormat', backref='entries')
 
     unique_fields = []
@@ -103,11 +117,11 @@ class Entry(Base):
 
     def breadcrumb_string(self):
         kana_string = ''
-        kanas = [k.breadcrumb_string() for k in self.kana]
+        kanas = [k.kana.breadcrumb_string() for k in self.kana_assocs]
         if kanas:
             kana_string = u'・'.join(kanas)
         kanji_string = ''
-        kanjis = [k.breadcrumb_string() for k in self.kanji]
+        kanjis = [k.kanji.breadcrumb_string() for k in self.kanji_assocs]
         if kanjis:
             kanji_string = '[' + u'・'.join(kanjis) + ']'
         return kana_string + kanji_string
@@ -125,11 +139,18 @@ class EntryFormat(Base):
     def __repr__(self):
         return "<EntryFormat(%s)>" % (self.name)
 
-definition_has_ues = Table(
-    'definitionhasues', Base.metadata,
-    Column('usage_example_id', Integer, ForeignKey('usageexamples.id'), primary_key=True),
-    Column('definition_id', Integer, ForeignKey('definitions.id'), primary_key=True),
-    Column('number', Integer))
+class DefinitionHasUEs(Base):
+    __tablename__ = 'definitionhasues'
+
+    usage_example_id = Column(Integer, ForeignKey('usageexamples.id'), primary_key=True)
+    definition_id    = Column(Integer, ForeignKey('definitions.id'), primary_key=True)
+    number           = Column(Integer)
+
+    definition    = relationship('Definition', backref='ue_assocs')
+    usage_example = relationship('UsageExample', backref='definition_assocs')
+
+    def __repr__(self):
+        return "<DefinitionHasUEs('{!r}, {!r}, {!r}')>".format(self.definitions, self.usage_examples, self.number)
 
 class Definition(Base):
     """Represents a dictionary definition."""
@@ -145,7 +166,6 @@ class Definition(Base):
     parent_id   = Column(Integer, ForeignKey('definitions.id'))
 
     entry = relationship('Entry', backref='definition')
-    usage_examples  = relationship('UsageExample', secondary=definition_has_ues, backref='definitions')
     children = relationship("Definition", backref=backref('parent', remote_side=[id]))
 
     def __repr__(self):
