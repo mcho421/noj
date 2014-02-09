@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dictionary schema_version="1.0.0a" 
+    xmlns="http://www.naturalorderjapanese.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.naturalorderjapanese.com dictionary_schema_1.0.0a.xsd">
+
+    <dictionary_meta>
+        <name>example</name>
+        <dump_version>1a</dump_version>
+        <convert_version>1a</convert_version>
+        <date>sunday</date>
+        <extra name="dictextra">some extra info</extra>
+    </dictionary_meta>
+
+    <entry format="J-J1">
+        <kana>い・る</kana>
+        <kanji>入る</kanji>
+        <accent>0</accent>
+        <definition group="grammar">
+            <definition_text>動ラ五［四］</definition_text>
+            <definition group="meaning">
+                <definition_text>人などが意図的に内側に移動する。</definition_text>
+                <definition>
+                    <definition_text>人などが，ある建物・区画の中に移動する。はいる。</definition_text>
+                    <usage_example type="unknown">
+                        <expression>無用の者―・る可(ベ)からず</expression>
+                    </usage_example>
+                    <usage_example type="unknown">
+                        <expression>虎穴に―・らずんば虎子を得ず</expression>
+                    </usage_example>
+                </definition>
+            </definition>
+        </definition>
+    </entry>
+    <entry format="J-J1">
+        <kana>こ・い</kana>
+        <kanji>濃い</kanji>
+        <accent>1</accent>
+        <definition group="subdefinition">
+            <definition_text>物の濃度・密度が大きい。</definition_text>
+            <definition>
+                <definition_text>色が深い。</definition_text>
+                <usage_example type="unknown">
+                    <expression>―・い緑</expression>
+                </usage_example>
+                <usage_example type="unknown">
+                    <expression>夕闇が―・い</expression>
+                </usage_example>
+            </definition>
+            <definition>
+                <definition_text>味・匂い・化粧などが強い。</definition_text>
+                <usage_example type="unknown">
+                    <expression>―・い味つけにする</expression>
+                </usage_example>
+                <usage_example type="unknown">
+                    <expression>ジャスミンの―・い香り</expression>
+                </usage_example>
+                <usage_example type="unknown">
+                    <expression>おしろいが―・い</expression>
+                </usage_example>
+            </definition>
+        </definition>
+    </entry>
+    <entry format="fake">
+        <kana>こ・い</kana>
+        <kanji>濃い</kanji>
+        <accent>1</accent>
+        <extra name="entryextra">entra entry stuff</extra>
+        <definition>
+            <definition_text>色が深い。</definition_text>
+            <extra name="defextra">extra definition stuff</extra>
+            <usage_example type="unknown" validated="false">
+                <expression>some ue</expression>
+                <reading>some reading</reading>
+                <meaning>some meaning</meaning>
+                <sound>some sound</sound>
+                <image>some image</image>
+                <extra name="ueextra">some extra stuff</extra>
+            </usage_example>
+        </definition>
+    </entry>
+
+</dictionary>
+

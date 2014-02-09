@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://www.naturalorderjapanese.com"
+    xmlns="http://www.naturalorderjapanese.com"
+    elementFormDefault="qualified"
+    version="1.0.0a">
+
+    <!-- definition of simple elements -->
+    <xs:element name="name" type="xs:string"/>
+    <xs:element name="dump_version" type="xs:string"/>
+    <xs:element name="convert_version" type="xs:string"/>
+    <xs:element name="date" type="xs:string"/>
+    <xs:element name="kana" type="xs:string"/>
+    <xs:element name="kanji" type="xs:string"/>
+    <xs:element name="accent" type="xs:string"/>
+    <xs:element name="definition_text" type="xs:string"/>
+    <xs:element name="expression" type="xs:string"/>
+    <xs:element name="reading" type="xs:string"/>
+    <xs:element name="meaning" type="xs:string"/>
+    <xs:element name="sound" type="xs:string"/>
+    <xs:element name="image" type="xs:string"/>
+
+    <!-- definition of complex elements -->
+    <xs:element name="extra">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="name" type="xs:string" use="required"/>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="dictionary_meta">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="name"/>
+                <xs:element ref="dump_version" minOccurs="0"/>
+                <xs:element ref="convert_version" minOccurs="0"/>
+                <xs:element ref="date" minOccurs="0"/>
+                <xs:element ref="extra" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="type" type="xs:string" default="UNKNOWN"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="usage_example">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="expression"/>
+                <xs:element ref="reading" minOccurs="0"/>
+                <xs:element ref="meaning" minOccurs="0"/>
+                <xs:element ref="sound" minOccurs="0"/>
+                <xs:element ref="image" minOccurs="0"/>
+                <xs:element ref="extra" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="type" type="xs:string" default="UNKNOWN"/>
+            <xs:attribute name="validated" type="xs:boolean" default="true"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="entry">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="kana" maxOccurs="unbounded"/>
+                <xs:element ref="kanji" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="accent" minOccurs="0"/>
+                <xs:element ref="extra" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="definition" type="definitionType" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="format" type="xs:string" default="J-E1"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="dictionary">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="dictionary_meta"/>
+                <xs:element ref="entry" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="schema_version" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    
+    <!-- recursive elements -->
+    <xs:complexType name="definitionType">
+        <xs:sequence>
+            <xs:element ref="definition_text" minOccurs="0"/>
+            <xs:element ref="extra" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element ref="usage_example" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="definition" type="definitionType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="group" type="xs:string"/>
+    </xs:complexType>
+
+</xs:schema>
+
