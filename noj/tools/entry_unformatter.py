@@ -5,11 +5,24 @@ from noj.misc.uni_printer import UniPrinter
 from jcconv import kata2hira
 
 KANA_BOUNDARY_PATTERN = re.compile(ur'[ぁ-ん](?=[ァ-ンー])|[ァ-ンー](?=[ぁ-ん])')
+KANA_STEM_PATTERN = re.compile(ur'[・∘]')
 
 def unformat_jj1_kana(kana_text):
     translation_table = dict.fromkeys(map(ord, u'-・∘'), None)
     # return kata2hira(kana_text.translate(translation_table))
     return kana_text.translate(translation_table)
+
+def jj1_kana_full(kana_text):
+    return unformat_jj1_kana(kana_text)
+
+def jj1_kana_stem(kana_text):
+    translation_table = dict.fromkeys(map(ord, u'-'), None)
+    without_dashes = kana_text.translate(translation_table)
+    split = re.split(KANA_STEM_PATTERN, without_dashes)
+    if len(split) == 1:
+        return without_dashes
+    else:
+        return u''.join(split[:-1])
 
 def add_hyphen_after(match):
     return match.group()[0] + u'-'
@@ -41,6 +54,26 @@ def unformat_jj1_kanji(kanji_text, kana_text):
         return u''.join(unformat_kanji_comp)
     except Exception as e:
         return kanji_text
+
+def jj1_kanji_full(kanji_text, kana_text):
+    return unformat_jj1_kanji(kanji_text, kana_text)
+
+def jj1_kanji_stem(kanji_text, kana_text):
+    translation_table = dict.fromkeys(map(ord, u'-'), None)
+    without_dashes = kana_text.translate(translation_table)
+    uf_kanji = unformat_jj1_kanji(kanji_text, kana_text)
+    j = len(uf_kanji) - 1
+    for i in reversed(range(len(without_dashes))):
+        if j < 0:
+            break
+        if without_dashes[i] == u'・' or without_dashes[i] == u'∘':
+            return uf_kanji[:j+1]
+        if uf_kanji[j] != without_dashes[i]:
+            break
+        j -= 1
+        
+    return uf_kanji
+
 
 def test_unformat():
     lines = [(u'あいあい-し・い', (u'愛愛しい',)),

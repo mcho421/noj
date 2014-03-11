@@ -338,8 +338,8 @@ def main():
     engine = create_engine('sqlite:///../../test.sqlite', echo=False)
     init_db(engine)
     schema_path = '../../schemas/dictionary_schema_1.0.0a.xsd'
-    importable_path = '../converters/daijirin2/daijirin2_importable.xml'
-    # importable_path = '../converters/jmdict/jmdict-importable.xml'
+    # importable_path = '../converters/daijirin2/daijirin2_importable.xml'
+    importable_path = '../converters/jmdict/jmdict-importable.xml'
     # importable_path = '../../schemas/example_dictionary_1.0.0a.xml'
 
     import progressbar as pb

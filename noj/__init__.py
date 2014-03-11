@@ -1,15 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys
 from sqlalchemy import create_engine
-from noj import db
-from noj import db_constants
-from noj import models
-from noj.profiles import ProfileManager
+from puremvc.patterns.facade import Facade
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from noj.model import (db, db_constants, models)
+from noj.model.profiles import ProfileManager
+from noj import controller
+from noj.view.lookup_gui import LookupGUI
 
-from noj.models import (
+from noj.model.models import (
     Session, 
     Base,
 )
+
+class AppFacade(Facade):
+
+    STARTUP = "STARTUP"
+    LOOKUP = "LOOKUP"
+    LOOKUP_DONE = "LOOKUP_DONE"
+
+    @staticmethod
+    def getInstance():
+        return AppFacade()
+
+    def initializeController(self):
+        super(AppFacade, self).initializeController()
+
+        super(AppFacade, self).registerCommand(AppFacade.STARTUP, controller.StartupCommand)
+        super(AppFacade, self).registerCommand(AppFacade.LOOKUP, controller.LookupCommand)
 
 def init_db(engine):
     Session.configure(bind=engine)
@@ -47,6 +67,13 @@ def main():
     # engine = create_engine('sqlite:///../test.sqlite', echo=True)
     engine = create_engine(pm.database_connect_string(), echo=True)
     init_db(engine)
+    app = AppFacade.getInstance()
+
+    app_gui = QApplication(sys.argv)
+    widget = LookupGUI()
+    widget.show()
+    app.sendNotification(AppFacade.STARTUP, widget)
+    app_gui.exec_()
 
 if __name__ == '__main__':
     main()
