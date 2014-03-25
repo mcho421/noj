@@ -18,14 +18,32 @@ class LookupMediator(Mediator, IMediator, QObject):
         viewComponent.set_mediator(self)
 
     def listNotificationInterests(self):
-        return [noj.AppFacade.LOOKUP_DONE] # AppFacade properties here
+        return [noj.AppFacade.LOOKUP_DONE, 
+                noj.AppFacade.ENTRY_LOOKUP_DONE,
+                noj.AppFacade.EXPRESSION_LOOKUP_DONE,
+               ] # AppFacade properties here
 
     def handleNotification(self, notification):
         if notification.getName() == noj.AppFacade.LOOKUP_DONE:
             ues = notification.getBody()
             print 'lookup done'
-            # self.emit(SIGNAL('foo'), unicode(ues))
-            self.viewComponent.search_results.setText(unicode(ues))
+            self.viewComponent.search_results.append('<h1>==== ENTRY LOOKUP ====</h1>')
+            self.viewComponent.search_results.append(unicode(ues))
+        elif notification.getName() == noj.AppFacade.ENTRY_LOOKUP_DONE:
+            entries = notification.getBody()
+            print 'entry lookup done'
+            self.viewComponent.search_results.append('<h1>==== ENTRIES ====</h1>')
+            self.viewComponent.search_results.append(unicode(entries.to_html()))
+        elif notification.getName() == noj.AppFacade.EXPRESSION_LOOKUP_DONE:
+            ues = notification.getBody()
+            print 'expression lookup done'
+            self.viewComponent.search_results.append('<h1>==== EXPRESSIONS ====</h1>')
+            self.viewComponent.search_results.append(unicode(ues))
+
+    def prepareForSearch(self):
+        self.viewComponent.search_results.clear()
+        # self.viewComponent.search_results.append('Searching...')
+
 
     def onSearch(self):
         self.viewComponent.search_bar.selectAll()

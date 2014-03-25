@@ -21,7 +21,9 @@ class AsyncLookup(Proxy, QObject):
 
     def lookup_entries(self, search_word, limit=None, offset=None, callback=None):
         print "looking up entries..."
-        pass
+        self.entry_worker = AsyncEntryLookupWorker(search_word, limit, offset, callback)
+        self.connect(self.entry_worker, SIGNAL("searchFinished"), self.done_entries)
+        self.entry_worker.start()
 
     def lookup_ues_by_entry(self, search_word, limit=None, offset=None, callback=None):
         print "looking up ues by entries..."
@@ -43,13 +45,23 @@ class AsyncLookup(Proxy, QObject):
         self.sendNotification(noj.AppFacade.LOOKUP_DONE, ues)
         # TODO: disconnect
 
+    def done_entries(self, entries):
+        self.sendNotification(noj.AppFacade.ENTRY_LOOKUP_DONE, entries)
+        print unicode(entries)
+
+    def done_ues_by_expression(self, ues):
+        print ues
+        self.sendNotification(noj.AppFacade.EXPRESSION_LOOKUP_DONE, ues)
+
     def lookup_ues_by_definition(self, search_word, limit=None, offset=None, callback=None):
         print "looking up ues by definitions..."
         pass
 
     def lookup_ues_by_expression(self, search_word, limit=None, offset=None, callback=None):
         print "looking up ues by expressions..."
-        pass
+        self.expression_worker = AsyncExpressionLookupWorker(search_word, limit, offset, callback)
+        self.connect(self.expression_worker, SIGNAL("searchFinished"), self.done_ues_by_expression)
+        self.expression_worker.start()
 
 class AsyncLookupWorker(QThread):
     """docstring for AsyncLookupWorker"""
@@ -71,6 +83,46 @@ class AsyncLookupWorker(QThread):
         print 'finished searching:', self.search_word
         self.emit(SIGNAL("searchFinished"), ues)
         # return ues
+
+class AsyncEntryLookupWorker(QThread):
+    def __init__(self, search_word, limit, offset, callback, parent=None):
+        super(AsyncEntryLookupWorker, self).__init__(parent)
+        self.search_word = search_word
+        self.limit = limit
+        self.offset = offset
+        self.callback = callback
+
+    def run(self):
+        session = Session()
+        entries = LookupUEs.lookup_entries(session, self.search_word, self.limit, self.offset)
+        # print unicode(entries)
+        unicode(entries)
+        if self.callback is not None:
+            self.callback(entries)
+        session.close()
+        print 'finished searching:', self.search_word
+        self.emit(SIGNAL("searchFinished"), entries)
+        # return entries
+
+class AsyncExpressionLookupWorker(QThread):
+    def __init__(self, search_word, limit, offset, callback, parent=None):
+        super(AsyncExpressionLookupWorker, self).__init__(parent)
+        self.search_word = search_word
+        self.limit = limit
+        self.offset = offset
+        self.callback = callback
+
+    def run(self):
+        session = Session()
+        entries = LookupUEs.lookup_ues_by_expression(session, self.search_word, self.limit, self.offset)
+        # print unicode(entries)
+        unicode(entries)
+        if self.callback is not None:
+            self.callback(entries)
+        session.close()
+        print 'finished searching:', self.search_word
+        self.emit(SIGNAL("searchFinished"), entries)
+        # return entries
         
 
 def _lookup_ues_by_entry(search_word, limit, offset, callback):

@@ -192,7 +192,7 @@ class Definition(Base):
     # ^ need an index on this
     parent_id   = Column(Integer, ForeignKey('definitions.id'))
 
-    entry = relationship('Entry', backref='definition')
+    entry = relationship('Entry', backref='definitions')
     children = relationship("Definition", backref=backref('parent', remote_side=[id]))
 
     def __repr__(self):

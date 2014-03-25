@@ -20,6 +20,8 @@ class AppFacade(Facade):
     STARTUP = "STARTUP"
     LOOKUP = "LOOKUP"
     LOOKUP_DONE = "LOOKUP_DONE"
+    ENTRY_LOOKUP_DONE = "ENTRY_LOOKUP_DONE"
+    EXPRESSION_LOOKUP_DONE = "EXPRESSION_LOOKUP_DONE"
 
     @staticmethod
     def getInstance():
@@ -66,6 +68,7 @@ def main():
     pm = ProfileManager()
     # engine = create_engine('sqlite:///../test.sqlite', echo=True)
     engine = create_engine(pm.database_connect_string(), echo=True)
+    print pm.database_connect_string()
     init_db(engine)
     app = AppFacade.getInstance()
 
