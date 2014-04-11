@@ -62,12 +62,56 @@ def init_db(engine):
     session.commit()
     session.close()
 
+# from http://www.riverbankcomputing.com/pipermail/pyqt/2009-May/022961.html
+def excepthook(excType, excValue, tracebackobj):
+    """
+    Global function to catch unhandled exceptions.
+    
+    @param excType exception type
+    @param excValue exception value
+    @param tracebackobj traceback object
+    """
+    import time, cStringIO
+    import traceback
+    from PyQt4 import QtGui
+
+    separator = '-' * 80
+    logFile = "simple.log"
+    notice = \
+        """An unhandled exception occurred. Please report the problem\n"""\
+        """using the error reporting dialog or via email to <%s>.\n"""\
+        """A log has been written to "%s".\n\nError information:\n""" % \
+        ("yourmail at server.com", logFile)
+    versionInfo="0.0.1"
+    timeString = time.strftime("%Y-%m-%d, %H:%M:%S")
+    
+    
+    tbinfofile = cStringIO.StringIO()
+    traceback.print_tb(tracebackobj, None, tbinfofile)
+    tbinfofile.seek(0)
+    tbinfo = tbinfofile.read()
+    errmsg = '%s: \n%s' % (str(excType), str(excValue))
+    sections = [separator, timeString, separator, errmsg, separator, tbinfo]
+    msg = '\n'.join(sections)
+    try:
+        f = open(logFile, "w")
+        f.write(msg)
+        f.write(versionInfo)
+        f.close()
+    except IOError:
+        pass
+    errorbox = QtGui.QMessageBox()
+    errorbox.setText(str(notice)+str(msg)+str(versionInfo))
+    errorbox.exec_()
+
+sys.excepthook = excepthook
+
 def main():
     # maybe convert_unicode=True?
     # engine = create_engine('sqlite:///:memory:', echo=True)
     pm = ProfileManager()
     # engine = create_engine('sqlite:///../test.sqlite', echo=True)
-    engine = create_engine(pm.database_connect_string(), echo=True)
+    engine = create_engine(pm.database_connect_string(), echo=False)
     print pm.database_connect_string()
     init_db(engine)
     app = AppFacade.getInstance()

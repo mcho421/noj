@@ -16,7 +16,7 @@ class LookupMediator(Mediator, IMediator, QObject):
         QObject.__init__(self, parent=None)
         viewComponent.connect(viewComponent.search_bar, SIGNAL('returnPressed()'), self.onSearch)
         viewComponent.set_mediator(self)
-
+    
     def listNotificationInterests(self):
         return [noj.AppFacade.LOOKUP_DONE, 
                 noj.AppFacade.ENTRY_LOOKUP_DONE,
@@ -42,7 +42,7 @@ class LookupMediator(Mediator, IMediator, QObject):
 
     def prepareForSearch(self):
         self.viewComponent.search_results.clear()
-        # self.viewComponent.search_results.append('Searching...')
+        self.viewComponent.search_results.setText('Searching...') # need this to stop cursor from scrolling
 
 
     def onSearch(self):
