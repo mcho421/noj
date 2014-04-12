@@ -3,6 +3,7 @@
 
 from collections import defaultdict
 from noj.model.definition_tree import DefinitionTreeVisitorHTML
+import noj.model.link_standardizer as link
 
 # TODO: maybe need a factory?
 
@@ -140,9 +141,10 @@ class DefinitionResult(object):
 
 class EntryList(object):
     """docstring for EntryList"""
-    def __init__(self):
+    def __init__(self, search_word):
         super(EntryList, self).__init__()
         self.result_list = list()
+        self.search_word = search_word
 
     def append(self, entry):
         self.result_list.append(entry)
@@ -171,9 +173,10 @@ class EntryList(object):
         blocks = list()
         for i, entry in enumerate(self.result_list):
             lib_s = entry.library.breadcrumb_string()
-            entry_s = u"<p><a href=\"{}\" id=\"entry\">{}</a>".format("somelink", entry.breadcrumb_string())
+            entry_link = link.entry_link(entry, self.search_word)
+            entry_s = u"<p><a href=\"{}\" id=\"entry\">{}</a>".format(entry_link, entry.breadcrumb_string())
             definition_tree = entry.definition_tree()
-            html_visitor = DefinitionTreeVisitorHTML()
+            html_visitor = DefinitionTreeVisitorHTML(self.search_word)
             definition_tree.accept(html_visitor)
             blocks.append(entry_s + u'<br/>' + html_visitor.get_HTML())
         return '<p>'.join(blocks)

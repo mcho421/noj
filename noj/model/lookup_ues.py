@@ -173,7 +173,7 @@ class LookupUEs(object):
         #     ue_result = adts.UEResult(search_word, ue, definition, entry)
         #     def_result.append(ue_result)
         # return dict_result
-        entry_list = adts.EntryList()
+        entry_list = adts.EntryList(search_word)
         for entry in res:
             entry_list.append(entry)
         return entry_list

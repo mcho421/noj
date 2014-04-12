@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import abc
 from collections import defaultdict
+import noj.model.link_standardizer as link
 
 class DefinitionTree(object):
     """Constructs tree for an entry's definitions"""
@@ -40,13 +41,15 @@ class DefinitionTreeVisitor:
         pass
         
 class DefinitionTreeVisitorHTML(object):
-    def __init__(self):
+    def __init__(self, search_word):
         self.lines = list()
+        self.search_word = search_word
 
     def visit_definition(self, definition, height):
         d = definition.definition or '(No definition)'
         d = d.strip().replace('\n', ' ')
-        def_s = u'&nbsp;'*height*4 + u"<font id=\"entry_definition\">(<a href=\"{}\"><font id=\"entry_definition_number\">{}</font></a>) {}".format("somelink", definition.number, d)
+        definition_link = link.definition_link(definition, self.search_word)
+        def_s = u'&nbsp;'*height*4 + u"<font id=\"entry_definition\">(<a href=\"{}\"><font id=\"entry_definition_number\">{}</font></a>) {}".format(definition_link, definition.number, d)
         self.lines.append(def_s)
 
     def get_HTML(self):
