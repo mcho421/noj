@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
+from noj.model.definition_tree import DefinitionTreeVisitorHTML
 
 # TODO: maybe need a factory?
 
@@ -166,58 +167,15 @@ class EntryList(object):
             blocks.append(entry_s + ' -- ' + lib_s + '\n' + '\n'.join(definition_list))
         return '\n\n'.join(blocks)
 
-    def make_definition_tree(self, entry_definitions):
-        parent_child_map = defaultdict(list)
-        for definition in entry_definitions:
-            pid = definition.parent_id
-            parent_child_map[pid].append(definition)
-        definition_tree = list()
-        for d in parent_child_map[None]:
-            self.append_definition_tree(d, definition_tree, parent_child_map)
-        # print definition_tree
-        # self.print_definition_tree(definition_tree)
-        return definition_tree
-
-    def print_definition_tree(self, dtree, height=0):
-        for d, children in dtree:
-            dd = d.definition or '(No definition)'
-            print u' '*height*4 + dd
-            self.print_definition_tree(children, height+1)
-
-    def html_definition_tree(self, definition_list, dtree, height=0):
-        for definition, children in dtree:
-            d = definition.definition or '(No definition)'
-            d = d.strip().replace('\n', ' ')
-            def_s = u'&nbsp;'*height*4 + u"<font id=\"entry_definition\">(<a href=\"{}\"><font id=\"entry_definition_number\">{}</font></a>) {}".format("somelink", definition.number, d)
-            definition_list.append(def_s)
-            self.html_definition_tree(definition_list, children, height+1)
-
-
-    def append_definition_tree(self, definition, parent_children, dmap):
-        children = list()
-        node = (definition, children)
-        parent_children.append(node)
-        for c in dmap[definition.id]:
-            self.append_definition_tree(c, children, dmap)
-
     def to_html(self):
         blocks = list()
         for i, entry in enumerate(self.result_list):
             lib_s = entry.library.breadcrumb_string()
-            # entry_s = entry.breadcrumb_string()
             entry_s = u"<p><a href=\"{}\" id=\"entry\">{}</a>".format("somelink", entry.breadcrumb_string())
-            definition_tree = self.make_definition_tree(entry.definitions)
-            definition_list = list()
-            self.html_definition_tree(definition_list, definition_tree)
-            # for definition in entry.definitions:
-            #     # definition_list.append(definition.breadcrumb_string())
-            #     d = definition.definition or '(No definition)'
-            #     d = d.strip().replace('\n', ' ')
-            #     def_s = u"<font id=\"entry_definition\">(<a href=\"{}\"><font id=\"entry_definition_number\">{}</font></a>) {}".format("somelink", definition.number, d)
-            #     definition_list.append(def_s)
-                # definition_list.append(definition.breadcrumb_string())
-            # blocks.append(entry_s + ' -- ' + lib_s + '\n' + '\n'.join(definition_list))
-            blocks.append(entry_s + u'<br/>' + u'<br/>'.join(definition_list))
+            definition_tree = entry.definition_tree()
+            html_visitor = DefinitionTreeVisitorHTML()
+            definition_tree.accept(html_visitor)
+            blocks.append(entry_s + u'<br/>' + html_visitor.get_HTML())
         return '<p>'.join(blocks)
 
     def __str__(self):

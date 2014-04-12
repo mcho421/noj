@@ -40,9 +40,9 @@ class LookupMediator(Mediator, IMediator, QObject):
             self.viewComponent.search_results.append('<h1>==== EXPRESSIONS ====</h1>')
             self.viewComponent.search_results.append(unicode(ues))
 
-    def prepareForSearch(self):
+    def prepareForSearch(self, search_word):
         self.viewComponent.search_results.clear()
-        self.viewComponent.search_results.setText('Searching...') # need this to stop cursor from scrolling
+        self.viewComponent.search_results.setText(u'Searching for "{}"...'.format(search_word)) # need this to stop cursor from scrolling
 
 
     def onSearch(self):

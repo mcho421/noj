@@ -22,6 +22,8 @@ from sqlalchemy import (
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 
+from noj.model.definition_tree import DefinitionTree
+
 Base = declarative_base()
 Session = scoped_session(sessionmaker()) # engine is binded later
 # Session = sessionmaker()
@@ -150,6 +152,10 @@ class Entry(Base):
         if kanjis:
             kanji_string = '[' + u'・'.join(kanjis) + ']'
         return kana_string + kanji_string
+
+    def definition_tree(self):
+        return DefinitionTree(self.definitions)
+
 
 class EntryFormat(Base):
     """Represents a dictionary format."""
