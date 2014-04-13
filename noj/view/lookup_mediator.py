@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os.path
 from puremvc.patterns.mediator import Mediator
 from puremvc.interfaces import IMediator
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import noj
 from noj.model.profiles import ProfileManager
+from noj.view.default_lookup_stylesheet import STYLESHEET
 
 class LookupMediator(Mediator, IMediator, QObject):
     NAME = 'LookupMediator'
@@ -17,10 +19,19 @@ class LookupMediator(Mediator, IMediator, QObject):
         QObject.__init__(self, parent=None)
         viewComponent.connect(viewComponent.search_bar, SIGNAL('returnPressed()'), self.onSearch)
         viewComponent.set_mediator(self)
+
+        # Setup stylesheet
         pm = ProfileManager() # TODO: Make the profile manager a proxy
         settings = self.viewComponent.search_results.settings()
-        stylesheet_url = QUrl.fromLocalFile(pm.lookup_stylesheet_path())
+        stylesheet_path = pm.lookup_stylesheet_path()
+        if not os.path.isfile(stylesheet_path):
+            f = open(stylesheet_path, 'w')
+            f.write(STYLESHEET)
+            f.close()
+        stylesheet_url = QUrl.fromLocalFile(stylesheet_path)
         settings.setUserStyleSheetUrl(stylesheet_url)
+
+        # Setup buffers
         self.html_dictionary_entries = None
         self.html_ues_via_entry = None
         self.html_ues_via_expression = None
