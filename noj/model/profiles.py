@@ -42,4 +42,7 @@ class ProfileManager(object):
     def media_path(self):
         return os.path.join(self.base, 'media')
 
+    def lookup_stylesheet_path(self):
+        return os.path.join(self.base, 'lookup_stylesheet.css')
+
         

@@ -6,6 +6,7 @@ from puremvc.interfaces import IMediator
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import noj
+from noj.model.profiles import ProfileManager
 
 class LookupMediator(Mediator, IMediator, QObject):
     NAME = 'LookupMediator'
@@ -16,6 +17,13 @@ class LookupMediator(Mediator, IMediator, QObject):
         QObject.__init__(self, parent=None)
         viewComponent.connect(viewComponent.search_bar, SIGNAL('returnPressed()'), self.onSearch)
         viewComponent.set_mediator(self)
+        pm = ProfileManager() # TODO: Make the profile manager a proxy
+        settings = self.viewComponent.search_results.settings()
+        stylesheet_url = QUrl.fromLocalFile(pm.lookup_stylesheet_path())
+        settings.setUserStyleSheetUrl(stylesheet_url)
+        self.html_dictionary_entries = None
+        self.html_ues_via_entry = None
+        self.html_ues_via_expression = None
     
     def listNotificationInterests(self):
         return [noj.AppFacade.LOOKUP_DONE, 
@@ -27,22 +35,36 @@ class LookupMediator(Mediator, IMediator, QObject):
         if notification.getName() == noj.AppFacade.LOOKUP_DONE:
             ues = notification.getBody()
             print 'lookup done'
-            self.viewComponent.search_results.append('<h1>==== ENTRY LOOKUP ====</h1>')
-            self.viewComponent.search_results.append(unicode(ues))
+            self.html_ues_via_entry = u'<h1>Examples from Entry</h1>' + unicode(ues.to_html())
+            self.update_page()
         elif notification.getName() == noj.AppFacade.ENTRY_LOOKUP_DONE:
             entries = notification.getBody()
             print 'entry lookup done'
-            self.viewComponent.search_results.append('<h1>==== ENTRIES ====</h1>')
-            self.viewComponent.search_results.append(unicode(entries.to_html()))
+            self.html_dictionary_entries = u'<h1>Dictionary Meanings</h1>\n' + unicode(entries.to_html())
+            self.update_page()
         elif notification.getName() == noj.AppFacade.EXPRESSION_LOOKUP_DONE:
             ues = notification.getBody()
             print 'expression lookup done'
-            self.viewComponent.search_results.append('<h1>==== EXPRESSIONS ====</h1>')
-            self.viewComponent.search_results.append(unicode(ues))
+            self.html_ues_via_expression = u'<h1>Examples from Expression</h1>' + unicode(ues.to_html())
+            self.update_page()
+
+    def update_page(self):
+        html_buffer = list()
+        if self.html_dictionary_entries is not None:
+            html_buffer.append(self.html_dictionary_entries)
+        if self.html_ues_via_entry is not None:
+            html_buffer.append(self.html_ues_via_entry)
+        if self.html_ues_via_expression is not None:
+            html_buffer.append(self.html_ues_via_expression)
+        self.viewComponent.search_results.setHtml(u'\n'.join(html_buffer))
+
 
     def prepareForSearch(self, search_word):
-        self.viewComponent.search_results.clear()
-        self.viewComponent.search_results.setText(u'Searching for "{}"...'.format(search_word)) # need this to stop cursor from scrolling
+        self.html_dictionary_entries = None
+        self.html_ues_via_entry = None
+        self.html_ues_via_expression = None
+
+        self.viewComponent.search_results.setHtml(u'Searching for "{}"...'.format(search_word))
 
 
     def onSearch(self):

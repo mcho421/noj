@@ -4,6 +4,7 @@
 from collections import defaultdict
 from noj.model.definition_tree import DefinitionTreeVisitorHTML
 import noj.model.link_standardizer as link
+from textwrap import dedent
 
 # TODO: maybe need a factory?
 
@@ -212,6 +213,12 @@ class UEResultList(object):
             blocks.append(unicode(ue))
         return '\n\n'.join(blocks)
 
+    def to_html(self):
+        blocks = list()
+        for i, ue in enumerate(self.result_list):
+            blocks.append(unicode(ue.to_html()))
+        return '<p>'.join(blocks)
+
     def __str__(self):
         return unicode(self).encode('unicode-escape')
 
@@ -325,6 +332,20 @@ class UEResult(object):
 
     def __unicode__(self):
         return u"{escore}\n{expr}\n{meaning}\n{source}".format(
+            escore=self.get_expression_score(),
+            expr=self.get_expression(),
+            meaning=self.get_meaning(),
+            source=self._get_source_line())
+
+    def to_html(self):
+        return dedent(u"""\
+            <div id="ue">
+            <div id="score"><b>{escore}</b></div>
+            <div id="content">{expr}<br/>
+            {meaning}<br/>
+            <font id="source">{source}</font>
+            </div>
+            </div>""").format(
             escore=self.get_expression_score(),
             expr=self.get_expression(),
             meaning=self.get_meaning(),
