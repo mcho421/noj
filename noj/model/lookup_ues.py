@@ -24,7 +24,12 @@ class LookupUEs(object):
 
     @classmethod
     def lookup_entries(cls, session, search_word, limit=None, offset=None):
-        return cls._lookup_entries_by_kanji(session, search_word, limit, offset)
+        # TODO: do kana
+        m = kana_matcher.match(search_word)
+        if m:
+            return cls._lookup_entries_by_kana(session, search_word, limit, offset)
+        else:
+            return cls._lookup_entries_by_kanji(session, search_word, limit, offset)
 
     @classmethod
     def lookup_ues_by_entry(cls, session, search_word, limit=None, offset=None):
@@ -125,22 +130,23 @@ class LookupUEs(object):
                options(joinedload(models.Entry.library))
 
     @classmethod
+    def _lookup_entries_by_kana(cls, session, search_word, limit=None, offset=None):
+        query = session.query(models.Entry).\
+                join(models.EntryHasKana).\
+                join(models.Morpheme).\
+                filter(models.Morpheme.morpheme==search_word).\
+                options(joinedload(models.Entry.library)).\
+                options(joinedload(models.Entry.definitions)).\
+                options(joinedload_all(models.Entry.kana_assocs, models.EntryHasKana.kana)).\
+                options(joinedload_all(models.Entry.kanji_assocs, models.EntryHasKanji.kanji))
+        res = cls._query_paging(query, limit, offset).all()
+        entry_list = adts.EntryList(search_word)
+        for entry in res:
+            entry_list.append(entry)
+        return entry_list
+
+    @classmethod
     def _lookup_entries_by_kanji(cls, session, search_word, limit=None, offset=None):
-        # Maybe just adapt the ue version
-        # q_entry_ids = session.query(models.Entry.id).\
-        #               join(models.EntryHasKanji).\
-        #               join(models.Morpheme).\
-        #               filter(models.Morpheme.morpheme==search_word)
-        # query = session.query(models.UsageExample, models.Library, models.Entry, models.Definition).\
-        #        join(models.DefinitionHasUEs).\
-        #        join(models.Definition).\
-        #        join(models.Entry).\
-        #        filter(models.Entry.id.in_(q_entry_ids)).\
-        #        options(joinedload_all(models.UsageExample.expression, 
-        #          models.Expression.morpheme_assocs, models.ExpressionConsistsOf.morpheme)).\
-        #        options(joinedload_all(models.Entry.kana_assocs, models.EntryHasKana.kana)).\
-        #        options(joinedload_all(models.Entry.kanji_assocs, models.EntryHasKanji.kanji)).\
-        #        options(joinedload(models.Entry.library))
         query = session.query(models.Entry).\
                 join(models.EntryHasKanji).\
                 join(models.Morpheme).\
@@ -149,35 +155,11 @@ class LookupUEs(object):
                 options(joinedload(models.Entry.definitions)).\
                 options(joinedload_all(models.Entry.kana_assocs, models.EntryHasKana.kana)).\
                 options(joinedload_all(models.Entry.kanji_assocs, models.EntryHasKanji.kanji))
-        # result = query.all()
-        # for ue, lib, entry, definition in result:
-            # print ue, lib, entry, definition
-        # count = cls._query_count(query)
         res = cls._query_paging(query, limit, offset).all()
-        # dict_result = adts.DictionaryResult(count=count)
-        # print 'dict:', unicode(dict_result)
-        # for ue, lib, entry, definition in res:
-        #     print "as"
-        #     if lib not in dict_result:
-        #         dict_result[lib] = adts.LibraryResult(lib, count=count)
-        #     lib_result = dict_result[lib]
-
-        #     if entry not in lib_result:
-        #         lib_result[entry] = adts.EntryResult(entry, count=count)
-        #     entry_result = lib_result[entry]
-
-        #     if definition not in entry_result:
-        #         entry_result[definition] = adts.DefinitionResult(definition, count=count)
-        #     def_result = entry_result[definition]
-
-        #     ue_result = adts.UEResult(search_word, ue, definition, entry)
-        #     def_result.append(ue_result)
-        # return dict_result
         entry_list = adts.EntryList(search_word)
         for entry in res:
             entry_list.append(entry)
         return entry_list
-        # return res
 
 
     @classmethod
