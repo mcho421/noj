@@ -242,6 +242,9 @@ class UEResult(object):
     def get_expression(self):
         return self.usage_example.expression.expression
 
+    def get_expression_furigana(self):
+        return self.usage_example.expression.furigana()
+
     def get_expression_id(self):
         return self.usage_example.expression.id
 
@@ -337,7 +340,15 @@ class UEResult(object):
             meaning=self.get_meaning(),
             source=self._get_source_line())
 
-    def to_html(self):
+    def to_html(self, furigana=True):
+        if furigana:
+            furigana_obj = self.get_expression_furigana()
+            expr = furigana_obj.html_ruby()
+            escore = u"<ruby>{}<rp>（</rp><rt>　</rt><rp>）</rp></ruby>".format(self.get_expression_score())
+        else:
+            expr = self.get_expression()
+            escore = self.get_expression_score()
+
         return dedent(u"""\
             <div id="ue">
             <div id="score"><b>{escore}</b></div>
@@ -346,8 +357,8 @@ class UEResult(object):
             <font id="source">{source}</font>
             </div>
             </div>""").format(
-            escore=self.get_expression_score(),
-            expr=self.get_expression(),
+            escore=escore,
+            expr=expr,
             meaning=self.get_meaning(),
             source=self._get_source_line())
 

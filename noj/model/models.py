@@ -23,6 +23,7 @@ from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 
 from noj.model.definition_tree import DefinitionTree
+from noj.model.furigana import Furigana
 
 Base = declarative_base()
 Session = scoped_session(sessionmaker()) # engine is binded later
@@ -233,6 +234,9 @@ class Expression(Base):
 
     def __repr__(self):
         return "<Expression({!r})>".format(self.expression)
+
+    def furigana(self):
+        return Furigana(self)
 
 class UsageExample(Base):
     """Represents a usage example."""
