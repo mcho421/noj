@@ -14,14 +14,13 @@ class LookupMediator(Mediator, IMediator, QObject):
     NAME = 'LookupMediator'
 
     def __init__(self, viewComponent):
-        # super(LookupMediator, self).__init__(LookupMediator.NAME, viewComponent)
         Mediator.__init__(self, LookupMediator.NAME, viewComponent)
         QObject.__init__(self, parent=None)
         viewComponent.connect(viewComponent.search_bar, SIGNAL('returnPressed()'), self.onSearch)
         viewComponent.set_mediator(self)
 
         # Setup stylesheet
-        pm = ProfileManager() # TODO: Make the profile manager a proxy
+        pm = self.facade.retrieveProxy(ProfileManager.NAME)
         settings = self.viewComponent.search_results.settings()
         stylesheet_path = pm.lookup_stylesheet_path()
         if not os.path.isfile(stylesheet_path):
@@ -74,7 +73,6 @@ class LookupMediator(Mediator, IMediator, QObject):
         self.html_dictionary_entries = None
         self.html_ues_via_entry = None
         self.html_ues_via_expression = None
-
         self.viewComponent.search_results.setHtml(u'Searching for "{}"...'.format(search_word))
 
 
@@ -82,8 +80,4 @@ class LookupMediator(Mediator, IMediator, QObject):
         self.viewComponent.search_bar.selectAll()
         text = unicode(self.viewComponent.search_bar.text())
         self.sendNotification(noj.AppFacade.LOOKUP, text)
-
-    def test(self):
-        print 'doing a test'
-        self.viewComponent.search_results.setText('test')
 

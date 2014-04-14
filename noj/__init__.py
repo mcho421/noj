@@ -115,6 +115,7 @@ def main():
     print pm.database_connect_string()
     init_db(engine)
     app = AppFacade.getInstance()
+    app.registerProxy(pm)
 
     app_gui = QApplication(sys.argv)
     widget = LookupGUI()

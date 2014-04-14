@@ -2,11 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import os
-from noj.tools.check_platform import isWin, isMac
 from PyQt4.QtGui import QDesktopServices
+from puremvc.patterns.proxy import Proxy
+from noj.tools.check_platform import isWin, isMac
 
-class ProfileManager(object):
+class ProfileManager(Proxy):
     """docstring for ProfileManager"""
+
+    NAME = 'ProfileManager'
+
     def __init__(self, base=None):
         super(ProfileManager, self).__init__()
         if base:
