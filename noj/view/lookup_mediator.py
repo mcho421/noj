@@ -59,6 +59,9 @@ class LookupMediator(Mediator, IMediator, QObject):
             self.update_page()
 
     def update_page(self):
+        # if scrollbar restore code doesn't work, see:
+        # http://stackoverflow.com/questions/17060966/restore-scrollbar-position-of-qwebview-after-sethtml
+        scroll_pos = self.viewComponent.search_results.page().mainFrame().scrollBarValue(Qt.Vertical)
         html_buffer = list()
         if self.html_dictionary_entries is not None:
             html_buffer.append(self.html_dictionary_entries)
@@ -67,6 +70,7 @@ class LookupMediator(Mediator, IMediator, QObject):
         if self.html_ues_via_expression is not None:
             html_buffer.append(self.html_ues_via_expression)
         self.viewComponent.search_results.setHtml(u'\n'.join(html_buffer))
+        self.viewComponent.search_results.page().mainFrame().setScrollBarValue(Qt.Vertical, scroll_pos)
 
 
     def prepareForSearch(self, search_word):
