@@ -232,11 +232,17 @@ class Expression(Base):
 
     unique_fields = ['expression']
 
+    @reconstructor
+    def init_on_load(self):
+        self.furigana_obj = None
+
     def __repr__(self):
         return "<Expression({!r})>".format(self.expression)
 
     def furigana(self):
-        return Furigana(self)
+        if self.furigana_obj is None:
+            self.furigana_obj = Furigana(self)
+        return self.furigana_obj
 
 class UsageExample(Base):
     """Represents a usage example."""
