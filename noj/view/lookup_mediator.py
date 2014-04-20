@@ -27,7 +27,7 @@ class LookupMediator(Mediator, IMediator, QObject):
             f = open(stylesheet_path, 'w')
             f.write(STYLESHEET)
             f.close()
-        stylesheet_url = QUrl.fromLocalFile(stylesheet_path)
+        stylesheet_url = QUrl(u'file://' + QDir.fromNativeSeparators(stylesheet_path))
         settings.setUserStyleSheetUrl(stylesheet_url)
 
         # Setup buffers
