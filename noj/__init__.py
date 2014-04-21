@@ -104,9 +104,9 @@ def excepthook(excType, excValue, tracebackobj):
     errorbox.setText(str(notice)+str(msg)+str(versionInfo))
     errorbox.exec_()
 
-sys.excepthook = excepthook
 
 def main():
+    sys.excepthook = excepthook
     # maybe convert_unicode=True?
     # engine = create_engine('sqlite:///:memory:', echo=True)
     pm = ProfileManager()

@@ -344,7 +344,7 @@ class UEResult(object):
         if furigana:
             furigana_obj = self.get_expression_furigana()
             expr = furigana_obj.html_ruby()
-            escore = u"<ruby>{}<rp>（</rp><rt>　</rt><rp>）</rp></ruby>".format(self.get_expression_score())
+            escore = u"<ruby>{:.3f}<rp>（</rp><rt>　</rt><rp>）</rp></ruby>".format(self.get_expression_score())
         else:
             expr = self.get_expression()
             escore = self.get_expression_score()
