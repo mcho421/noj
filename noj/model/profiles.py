@@ -49,4 +49,7 @@ class ProfileManager(Proxy):
     def lookup_stylesheet_path(self):
         return os.path.join(self.base, 'lookup_stylesheet.css')
 
+    def settings_path(self):
+        return os.path.join(self.base, 'settings.ini')
+
         
