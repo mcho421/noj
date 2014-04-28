@@ -316,19 +316,19 @@ class UEResult(object):
         libraries = self.get_library_list()
         if len(libraries) == 1:
             parts.append(libraries[0])
-        else:
+        elif len(libraries) > 1:
             parts.append("(Multiple libraries)")
 
         entries = self.get_entry_list()
         if len(entries) == 1:
             parts.append(entries[0])
-        else:
+        elif len(entries) > 1:
             parts.append("(Multiple entries)")
 
         definitions = self.get_definition_list()
         if len(definitions) == 1:
             parts.append(definitions[0])
-        else:
+        elif len(definitions) > 1:
             parts.append("(Multiple definitions)")
 
         return u' → '.join(parts)
