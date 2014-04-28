@@ -35,12 +35,12 @@ imgRegexps = [
 ]
 regexps = soundRegexps + imgRegexps
 
-class AnkiImporter(object):
-    """Sync Anki decks into the database."""
+class AnkiWalker(object):
+    """Traverses an Anki deck while taking a visitor."""
     def __init__(self, collection_path, deck_name, lib_name=None,
                  expression_field=u'Expression', meaning_field=u'Meaning',
                  sound_field=None, image_field=None):
-        super(AnkiImporter, self).__init__()
+        super(AnkiWalker, self).__init__()
         self.collection_path = collection_path
         self.deck_name = deck_name
         self.lib_name = lib_name or (u'Anki Deck ' + deck_name)
@@ -126,7 +126,7 @@ class AnkiImporter(object):
         return unicode(re.sub("(?i)\.(anki2)$", ".media", self.col.path))
 
 class AnkiImporterVisitor(object):
-    """docstring for AnkiImporterVisitor"""
+    """Imports Anki deck using visitor pattern."""
     def __init__(self, session, pm):
         super(AnkiImporterVisitor, self).__init__()
         self.session = session
@@ -215,7 +215,8 @@ class AnkiImporterVisitor(object):
         for morpheme_id, count in self.morpheme_count.items():
             morpheme_count_tuples.append({'m_id':morpheme_id, 'new_count':count})
             
-        self.session.execute(morpheme_count_updater, morpheme_count_tuples)
+        if morpheme_count_tuples:
+            self.session.execute(morpheme_count_updater, morpheme_count_tuples)
 
     def _copy_media(self, ue_obj):
         if ue_obj.sound is not None:
@@ -321,9 +322,9 @@ def main():
                ' ', pb.Timer(), ' ']
 
     session = Session()
-    # importer = AnkiImporter(collection_path, 'Japanese', 
+    # importer = AnkiWalker(collection_path, 'Japanese', 
     #                         expression_field='Expression', meaning_field='Meaning')
-    importer = AnkiImporter(collection_path, 'Core 2000 Japanese Vocabulary',
+    importer = AnkiWalker(collection_path, 'Core 2000 Japanese Vocabulary',
         expression_field='Sentence - Kanji', meaning_field='Sentence - English',
         sound_field='Sentence - Audio')
     visitor = AnkiImporterVisitor(session, pm)
