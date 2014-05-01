@@ -18,6 +18,7 @@ from noj.model import (
 )
 from noj.tools.japanese_parser import JapaneseParser
 import noj.tools.entry_unformatter as uf
+from noj.importers.abstract_importer import AbstractImporterVisitor
 
 from noj.model.models import Session
 import pdb
@@ -125,13 +126,11 @@ class AnkiWalker(object):
             self.load_collection()
         return unicode(re.sub("(?i)\.(anki2)$", ".media", self.col.path))
 
-class AnkiImporterVisitor(object):
+class AnkiImporterVisitor(AbstractImporterVisitor):
     """Imports Anki deck using visitor pattern."""
-    def __init__(self, session, pm):
-        super(AnkiImporterVisitor, self).__init__()
-        self.session = session
+    def __init__(self, session, parser, pm):
+        super(AnkiImporterVisitor, self).__init__(session, parser)
         self.pm = pm
-        self.parser = JapaneseParser()
         self.media_dir = None
         self.lib_id = None
         self.ue_obj = None
@@ -236,46 +235,6 @@ class AnkiImporterVisitor(object):
             except IOError:
                pass
 
-    def _import_parse_morphemes(self, line):
-        results = self.parser.parse(line or '')
-
-        # For bulk inserting the morpheme-expression association tuples
-        morpheme_list = list()  # list of dicts representing fields
-
-        for m in results:
-            # Insert or get morpheme, (morpheme, type_id) unique
-            morpheme_key = (m.base, m.type_)
-            if morpheme_key in self.morpheme_cache:
-                morpheme_id = self.morpheme_cache[morpheme_key]
-            else:
-                morpheme_id, new_morpheme, morpheme = db.insert_get(self.session, 
-                    models.Morpheme, morpheme=m.base, type_id=m.type_,
-                    status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])
-                self.morpheme_cache[morpheme_key] = morpheme_id
-
-            # Bulk insert later
-            morpheme_list.append({'morpheme_id':morpheme_id,
-                                  'position':m.position, 
-                                  'word_length':m.length,
-                                  'conjugation':m.morpheme,
-                                  'reading':m.reading})
-
-        return morpheme_list
-
-    def _import_expression(self, expression):
-        # Get or create
-        expression_id, new = db.insert(self.session, models.Expression, 
-                                       expression=expression)
-        if new:
-            morpheme_list = self._import_parse_morphemes(expression)
-            if len(morpheme_list) > 0:
-                for m in morpheme_list:
-                    m['expression_id'] = expression_id
-                db.insert_many(self.session, models.ExpressionConsistsOf, 
-                               morpheme_list)
-
-        return expression_id
-
     def _stage_morpheme_counts(self, expression_id):
         # Only stages morphemes from new expressions to be inserted to the list
         # Note: this should be done before mapping the expression to the list
@@ -327,7 +286,8 @@ def main():
     importer = AnkiWalker(collection_path, 'Core 2000 Japanese Vocabulary',
         expression_field='Sentence - Kanji', meaning_field='Sentence - English',
         sound_field='Sentence - Audio')
-    visitor = AnkiImporterVisitor(session, pm)
+    parser = JapaneseParser()
+    visitor = AnkiImporterVisitor(session, parser, pm)
     print importer._get_media_folder_path()
 
     pbar = pb.ProgressBar(widgets=widgets, maxval=len(importer)).start()

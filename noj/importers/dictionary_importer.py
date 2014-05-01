@@ -16,6 +16,7 @@ from noj.model import (
 )
 from noj.tools.japanese_parser import JapaneseParser
 import noj.tools.entry_unformatter as uf
+from noj.importers.abstract_importer import AbstractImporterVisitor
 
 from noj.model.models import Session
 
@@ -26,10 +27,10 @@ pp = UniPrinter(indent=4)
 NAMESPACE_URI = "http://www.naturalorderjapanese.com"
 NAMESPACE_PREFIX = "{" + NAMESPACE_URI + "}"
 
-class DictionaryImporter(object):
+class DictionaryWalker(object):
     """Import XML dictionary files into the database."""
     def __init__(self, importable_path):
-        super(DictionaryImporter, self).__init__()
+        super(DictionaryWalker, self).__init__()
         self.importable_path = importable_path
 
     def __len__(self):
@@ -55,7 +56,7 @@ class DictionaryImporter(object):
             for action, elem in context:
                 if elem.tag == entry_tag:
                     entry_xml = elem
-                    self._import_entry(entry_xml, visitor)
+                    self._entry_accept(entry_xml, visitor)
                     yield f.tell()
 
                 elif elem.tag == dictionary_meta_tag:
@@ -97,7 +98,7 @@ class DictionaryImporter(object):
             return json.dumps(extra_dict)
         return None
 
-    def _import_entry(self, entry_xml, visitor):
+    def _entry_accept(self, entry_xml, visitor):
         visitor.visit_entry()
 
         # Import entry format
@@ -149,9 +150,9 @@ class DictionaryImporter(object):
 
         # Import definitions
         root_def_xml = entry_xml.find(NAMESPACE_PREFIX + 'definition')
-        self._import_definition(root_def_xml, 1, visitor)
+        self._definition_accept(root_def_xml, 1, visitor)
 
-    def _import_definition(self, definition_xml, number, visitor):
+    def _definition_accept(self, definition_xml, number, visitor):
         visitor.visit_definition(number)
 
         group = definition_xml.get('group')
@@ -179,7 +180,7 @@ class DictionaryImporter(object):
         # Import usage examples
         ue_list = definition_xml.findall(NAMESPACE_PREFIX + 'usage_example')
         for i, ue_xml in enumerate(ue_list):
-            self._import_usage_example(ue_xml, i+1, visitor)
+            self._usage_example_accept(ue_xml, i+1, visitor)
 
         # Import definition to usage example association
         visitor.visit_before_definition_recurse()
@@ -187,11 +188,11 @@ class DictionaryImporter(object):
         # Import subdefinitions
         subdefinition_list = definition_xml.findall(NAMESPACE_PREFIX + 'definition')
         for i, subdef_xml in enumerate(subdefinition_list):
-            self._import_definition(subdef_xml, i+1, visitor)
+            self._definition_accept(subdef_xml, i+1, visitor)
 
         visitor.visit_finish_definition()
 
-    def _import_usage_example(self, usage_example_xml, number, visitor):
+    def _usage_example_accept(self, usage_example_xml, number, visitor):
         ue_type = usage_example_xml.get('type') or 'UNKNOWN'
         visitor.visit_usage_example(ue_type)
 
@@ -236,16 +237,14 @@ class DictionaryImporter(object):
         visitor.visit_finish_usage_example(number)
 
 
-class DictionaryImporterVisitor(object):
+class DictionaryImporterVisitor(AbstractImporterVisitor):
     """docstring for DictionaryImporterVisitor"""
-    def __init__(self, session):
-        super(DictionaryImporterVisitor, self).__init__()
-        self.session = session
+    def __init__(self, session, parser):
+        super(DictionaryImporterVisitor, self).__init__(session, parser)
         self.lib_id = None
         self.lib_obj = models.Library(type_id=db_constants.LIB_TYPES_TO_ID['DICTIONARY'],
                                  import_version=__version__)
         self.morpheme_cache = dict()
-        self.parser = JapaneseParser()
         self.entry_obj = None
         self.entry_id = None
         self.eformat = None
@@ -412,45 +411,6 @@ class DictionaryImporterVisitor(object):
             self.definition_ues.append({'usage_example_id': ue_id, 'definition_id': self.def_id,
                                    'number': number})
 
-    def _import_expression(self, expression):
-        expression_id, new = db.insert(self.session, models.Expression, 
-                                       expression=expression)
-        if new:
-            morpheme_list = self._import_parse_morphemes(expression)
-            if len(morpheme_list) > 0:
-                for m in morpheme_list:
-                    m['expression_id'] = expression_id
-                db.insert_many(self.session, models.ExpressionConsistsOf, 
-                               morpheme_list)
-
-        return expression_id
-
-    def _import_parse_morphemes(self, line):
-        results = self.parser.parse(line or '')
-
-        # For bulk inserting the morpheme-expression association tuples
-        morpheme_list = list()  # list of dicts representing fields
-
-        for m in results:
-            # Insert or get morpheme, (morpheme, type_id) unique
-            morpheme_key = (m.base, m.type_)
-            if morpheme_key in self.morpheme_cache:
-                morpheme_id = self.morpheme_cache[morpheme_key]
-            else:
-                morpheme_id, new_morpheme, morpheme = db.insert_get(self.session, 
-                    models.Morpheme, morpheme=m.base, type_id=m.type_,
-                    status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])
-                self.morpheme_cache[morpheme_key] = morpheme_id
-
-            # Bulk insert later
-            morpheme_list.append({'morpheme_id':morpheme_id,
-                                  'position':m.position, 
-                                  'word_length':m.length,
-                                  'conjugation':m.morpheme,
-                                  'reading':m.reading})
-
-        return morpheme_list
-
 
 def main():
     from sqlalchemy import create_engine
@@ -468,8 +428,9 @@ def main():
                ' ', pb.Timer(), ' ']
 
     session = Session()
-    importer = DictionaryImporter(importable_path)
-    visitor = DictionaryImporterVisitor(session)
+    importer = DictionaryWalker(importable_path)
+    parser = JapaneseParser()
+    visitor = DictionaryImporterVisitor(session, parser)
     importer.validate_schema(schema_path)
 
     pbar = pb.ProgressBar(widgets=widgets, maxval=len(importer)).start()
