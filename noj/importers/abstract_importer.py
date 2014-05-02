@@ -17,6 +17,47 @@ class AbstractImporterVisitor(object):
         self.parser = parser
         self.morpheme_cache = dict()
 
+        self.lib_obj = None
+        self.lib_id = None
+        self.entry_obj = None
+        self.entry_id = None
+        self.eformat = None
+
+    def get_import_version(self):
+        return None
+
+    def visit_library(self):
+        self.lib_obj = models.Library(type_id=db_constants.LIB_TYPES_TO_ID['DICTIONARY'],
+                                      import_version=self.get_import_version())
+        self.lib_id = None
+
+    def visit_library_name(self, name):
+        self.lib_obj.name = name
+
+    def visit_library_dump_version(self, dump_version):
+        self.lib_obj.dump_version = dump_version
+
+    def visit_library_convert_version(self, convert_version):
+        self.lib_obj.convert_version = convert_version
+
+    def visit_library_date(self, date):
+        self.lib_obj.date = date
+
+    def visit_library_extra(self, extra):
+        self.lib_obj.extra = extra
+
+    def visit_finish_library(self):
+        self.lib_id = db.insert_orm(self.session, self.lib_obj)[0]
+
+    def visit_entry(self):
+        self.entry_obj = models.Entry(library_id=self.lib_id)
+        self.entry_id = None
+
+    def visit_entry_format(self, eformat):
+        self.eformat = eformat
+        eformat_id = db.insert(self.session, models.EntryFormat, name=self.eformat)[0]
+        self.entry_obj.format_id = eformat_id
+
     def _import_expression(self, expression):
         expression_id, new = db.insert(self.session, models.Expression, 
                                        expression=expression)

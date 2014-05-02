@@ -132,7 +132,6 @@ class AnkiImporterVisitor(AbstractImporterVisitor):
         super(AnkiImporterVisitor, self).__init__(session, parser)
         self.pm = pm
         self.media_dir = None
-        self.lib_id = None
         self.ue_obj = None
         self.ue_list_id = db_constants.KNOWN_EXAMPLES_ID
         # To reduce morpheme lookups
@@ -268,8 +267,8 @@ def main():
     from noj.model.profiles import ProfileManager
     from noj.tools.check_platform import isWin, isMac
     pm = ProfileManager()
-    # engine = create_engine('sqlite:///../../test.sqlite', echo=False)
-    engine = create_engine(pm.database_connect_string(), echo=False)
+    engine = create_engine('sqlite:///../../test.sqlite', echo=False)
+    # engine = create_engine(pm.database_connect_string(), echo=False)
     init_db(engine)
     if isWin:
         collection_path = 'C:\Users\Mathew\Documents\Anki\User 1\collection.anki2'
