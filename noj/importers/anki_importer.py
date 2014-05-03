@@ -72,6 +72,8 @@ class AnkiWalker(object):
 
         visitor.visit_collection(self.col)
         visitor.visit_library(self.lib_name)
+        visitor.visit_library_date(datetime.now().date().isoformat())
+        visitor.visit_finish_library()
 
         for i, note_id in enumerate(self.ids):  # Loop over all notes in deck
             self._usage_example_accept(note_id, visitor)
@@ -84,10 +86,11 @@ class AnkiWalker(object):
         note = self.col.getNote(note_id)
         keys = note.keys()
 
-        visitor.visit_usage_example(note)
 
         if self.expression_field in keys:
             expression = note.__getitem__(self.expression_field)
+
+            visitor.visit_usage_example('UNKNOWN')
             visitor.visit_expression(expression)
 
             if self.meaning_field is not None and self.meaning_field in keys:
@@ -96,7 +99,7 @@ class AnkiWalker(object):
 
             self._media_accept(note, keys, visitor)
 
-        visitor.visit_finish_usage_example()
+            visitor.visit_finish_usage_example()
 
     def _media_accept(self, note, keys, visitor):
         if self.sound_field is not None and self.sound_field in keys:
@@ -132,11 +135,12 @@ class AnkiImporterVisitor(AbstractImporterVisitor):
         super(AnkiImporterVisitor, self).__init__(session, parser)
         self.pm = pm
         self.media_dir = None
-        self.ue_obj = None
         self.ue_list_id = db_constants.KNOWN_EXAMPLES_ID
         # To reduce morpheme lookups
-        self.morpheme_cache = dict() # (morpheme-unicode, type_id) -> morpheme-id
         self.morpheme_count = dict() # morpheme-id -> absolute count
+
+    def get_import_version(self):
+        return __version__
 
     def visit_collection(self, col):
         self.media_dir = re.sub("(?i)\.(anki2)$", ".media", col.path)
@@ -149,50 +153,23 @@ class AnkiImporterVisitor(AbstractImporterVisitor):
         """
         # Update or create UE library
         query = self.session.query(models.Library).filter(models.Library.name==lib_name)
-        lib_obj = query.first()
-        if lib_obj is None:
-            lib_obj = models.Library(type_id=db_constants.LIB_TYPES_TO_ID['CORPUS'])
-            lib_obj.name = lib_name
+        self.lib_obj = query.first()
+        if self.lib_obj is None:
+            self.lib_obj = models.Library(type_id=db_constants.LIB_TYPES_TO_ID['CORPUS'])
+            self.lib_obj.name = lib_name
 
-        lib_obj.import_version = __version__
-        lib_obj.date = datetime.now().date().isoformat()
-        self.lib_id = db.insert_orm_or_replace(self.session, lib_obj)
+        self.lib_obj.import_version = self.get_import_version()
 
-    def visit_usage_example(self, note):
-        self.ue_obj = None
-
-    def visit_expression(self, expression):
-        # Need to handle morpheme counts
-        expression_id = self._import_expression(expression)
-        # print 'expression id:', expression_id
-
-        # Insert or get usage example, (expression_id, library_id) unique
-        self.ue_obj = models.UsageExample(library_id=self.lib_id)
-
-        ue_type = 'UNKNOWN'
-        ue_type = ue_type.upper()
-        ue_type_id = db.insert(self.session, models.UEType, name=ue_type)[0]
-        self.ue_obj.type_id = ue_type_id
-        self.ue_obj.expression_id = expression_id
-
-    def visit_meaning(self, meaning):
-        self.ue_obj.meaning = meaning
-
-    def visit_sound(self, sound):
-        self.ue_obj.sound = sound
-
-    def visit_image(self, image):
-        self.ue_obj.image = image
+    def visit_finish_library(self):
+        self.lib_id = db.insert_orm_or_replace(self.session, self.lib_obj)
 
     def visit_finish_usage_example(self):
         if self.ue_obj is not None:
-            usage_example_id, new = db.insert_orm(self.session, self.ue_obj)
+            ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
             # copy the sound and image files if new
             if new:
                 self._copy_media(self.ue_obj)
-
-            # print 'usage example id:', usage_example_id
 
             # if its a new expression, should be able to short circuit
             self._stage_morpheme_counts(self.ue_obj.expression_id)
@@ -200,7 +177,7 @@ class AnkiImporterVisitor(AbstractImporterVisitor):
             # Insert usage example into usage example list, no need to retrieve tuple
             db.insert_many_core(self.session, models.ue_part_of_list, [{
                                 'ue_list_id':self.ue_list_id,
-                                'usage_example_id':usage_example_id}])
+                                'usage_example_id':ue_id}])
 
 
     def visit_finish(self):
