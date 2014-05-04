@@ -15,7 +15,7 @@ from noj.model import (
     db_constants,
 )
 from noj.tools.japanese_parser import JapaneseParser
-from noj.importers.abstract_importer import AbstractImporterVisitor
+from noj.importers.abstract_importer import AbstractDictionaryImporterVisitor
 
 from noj.model.models import Session
 
@@ -236,7 +236,7 @@ class DictionaryWalker(object):
         visitor.visit_finish_usage_example(number)
 
 
-class DictionaryImporterVisitor(AbstractImporterVisitor):
+class DictionaryImporterVisitor(AbstractDictionaryImporterVisitor):
     """docstring for DictionaryImporterVisitor"""
     def __init__(self, session, parser):
         super(DictionaryImporterVisitor, self).__init__(session, parser)

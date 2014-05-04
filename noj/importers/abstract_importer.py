@@ -21,13 +21,6 @@ class AbstractImporterVisitor(object):
 
         self.lib_obj = None
         self.lib_id = None
-        self.entry_obj = None
-        self.entry_id = None
-        self.eformat = None
-        self.last_kana_text = None
-        self.def_obj = None
-        self.def_id = None
-        self.def_id_stack = list()
         self.definition_ues = None
         self.ue_obj = None
 
@@ -56,6 +49,94 @@ class AbstractImporterVisitor(object):
 
     def visit_finish_library(self):
         self.lib_id = db.insert_orm(self.session, self.lib_obj)[0]
+
+    def visit_usage_example(self, ue_type):
+        self.ue_obj = models.UsageExample(library_id=self.lib_id)
+
+        ue_type = ue_type.upper()
+        ue_type_id = db.insert(self.session, models.UEType, name=ue_type)[0]
+        self.ue_obj.type_id = ue_type_id
+
+    def visit_expression(self, expression):
+        expression_id = self._import_expression(expression)
+        self.ue_obj.expression_id = expression_id
+
+    def visit_ue_reading(self, reading):
+        self.ue_obj.reading = reading
+
+    def visit_meaning(self, meaning):
+        self.ue_obj.meaning = meaning
+
+    def visit_sound(self, sound):
+        self.ue_obj.sound = sound
+
+    def visit_image(self, image):
+        self.ue_obj.image = image
+
+    def visit_ue_extra(self, extra):
+        self.ue_obj.extra = extra
+
+    def visit_ue_validated(self, is_validated):
+        self.ue_obj.is_validated = is_validated
+
+    @abc.abstractmethod
+    def visit_finish_usage_example(self, number):
+        pass
+
+    def visit_finish(self):
+        pass
+
+    def _import_expression(self, expression):
+        expression_id, new = db.insert(self.session, models.Expression, 
+                                       expression=expression)
+        if new:
+            morpheme_list = self._import_parse_morphemes(expression)
+            if len(morpheme_list) > 0:
+                for m in morpheme_list:
+                    m['expression_id'] = expression_id
+                db.insert_many(self.session, models.ExpressionConsistsOf, 
+                               morpheme_list)
+
+        return expression_id
+
+    def _import_parse_morphemes(self, line):
+        results = self.parser.parse(line or '')
+
+        # For bulk inserting the morpheme-expression association tuples
+        morpheme_list = list()  # list of dicts representing fields
+
+        for m in results:
+            # Insert or get morpheme, (morpheme, type_id) unique
+            morpheme_key = (m.base, m.type_)
+            if morpheme_key in self.morpheme_cache:
+                morpheme_id = self.morpheme_cache[morpheme_key]
+            else:
+                morpheme_id, new_morpheme, morpheme = db.insert_get(self.session, 
+                    models.Morpheme, morpheme=m.base, type_id=m.type_,
+                    status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])
+                self.morpheme_cache[morpheme_key] = morpheme_id
+
+            # Bulk insert later
+            morpheme_list.append({'morpheme_id':morpheme_id,
+                                  'position':m.position, 
+                                  'word_length':m.length,
+                                  'conjugation':m.morpheme,
+                                  'reading':m.reading})
+
+        return morpheme_list
+
+class AbstractDictionaryImporterVisitor(AbstractImporterVisitor):
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, session, parser):
+        super(AbstractDictionaryImporterVisitor, self).__init__(session, parser)
+        self.entry_obj = None
+        self.entry_id = None
+        self.eformat = None
+        self.last_kana_text = None
+        self.def_obj = None
+        self.def_id = None
+        self.def_id_stack = list()
 
     def visit_entry(self):
         # TODO: entry number not set
@@ -146,47 +227,8 @@ class AbstractImporterVisitor(object):
     def visit_finish_definition(self):
         self.def_id = self.def_id_stack.pop()
 
-    def visit_usage_example(self, ue_type):
-        self.ue_obj = models.UsageExample(library_id=self.lib_id)
-
-        ue_type = ue_type.upper()
-        ue_type_id = db.insert(self.session, models.UEType, name=ue_type)[0]
-        self.ue_obj.type_id = ue_type_id
-
     def visit_finish_definition_ues(self):
         db.insert_many(self.session, models.DefinitionHasUEs, self.definition_ues)
-
-    def visit_expression(self, expression):
-        expression_id = self._import_expression(expression)
-        self.ue_obj.expression_id = expression_id
-
-    def visit_ue_reading(self, reading):
-        self.ue_obj.reading = reading
-
-    def visit_meaning(self, meaning):
-        self.ue_obj.meaning = meaning
-
-    def visit_sound(self, sound):
-        self.ue_obj.sound = sound
-
-    def visit_image(self, image):
-        self.ue_obj.image = image
-
-    def visit_ue_extra(self, extra):
-        self.ue_obj.extra = extra
-
-    def visit_ue_validated(self, is_validated):
-        self.ue_obj.is_validated = is_validated
-
-    def visit_finish_usage_example(self, number):
-        if self.ue_obj is not None:
-            ue_id, new = db.insert_orm(self.session, self.ue_obj)
-
-            self.definition_ues.append({'usage_example_id': ue_id, 'definition_id': self.def_id,
-                                   'number': number})
-
-    def visit_finish(self):
-        pass
 
     def _import_definition_assocs(self, def_text, def_id):
         if def_text is not None:
@@ -197,41 +239,22 @@ class AbstractImporterVisitor(object):
                 db.insert_many(self.session, models.DefinitionConsistsOf, 
                                morpheme_list)
 
-    def _import_expression(self, expression):
-        expression_id, new = db.insert(self.session, models.Expression, 
-                                       expression=expression)
-        if new:
-            morpheme_list = self._import_parse_morphemes(expression)
-            if len(morpheme_list) > 0:
-                for m in morpheme_list:
-                    m['expression_id'] = expression_id
-                db.insert_many(self.session, models.ExpressionConsistsOf, 
-                               morpheme_list)
+    def visit_finish_usage_example(self, number):
+        if self.ue_obj is not None:
+            ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
-        return expression_id
+            self.definition_ues.append({'usage_example_id': ue_id, 'definition_id': self.def_id,
+                                   'number': number})
 
-    def _import_parse_morphemes(self, line):
-        results = self.parser.parse(line or '')
+class AbstractCorpusImporterVisitor(AbstractImporterVisitor):
+    __metaclass__ = abc.ABCMeta
 
-        # For bulk inserting the morpheme-expression association tuples
-        morpheme_list = list()  # list of dicts representing fields
+    def __init__(self, session, parser):
+        super(AbstractCorpusImporterVisitor, self).__init__(session, parser)
 
-        for m in results:
-            # Insert or get morpheme, (morpheme, type_id) unique
-            morpheme_key = (m.base, m.type_)
-            if morpheme_key in self.morpheme_cache:
-                morpheme_id = self.morpheme_cache[morpheme_key]
-            else:
-                morpheme_id, new_morpheme, morpheme = db.insert_get(self.session, 
-                    models.Morpheme, morpheme=m.base, type_id=m.type_,
-                    status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])
-                self.morpheme_cache[morpheme_key] = morpheme_id
+    def visit_finish_usage_example(self, number):
+        # number parameter is not used in corpus import
+        if self.ue_obj is not None:
+            ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
-            # Bulk insert later
-            morpheme_list.append({'morpheme_id':morpheme_id,
-                                  'position':m.position, 
-                                  'word_length':m.length,
-                                  'conjugation':m.morpheme,
-                                  'reading':m.reading})
 
-        return morpheme_list

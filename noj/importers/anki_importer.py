@@ -18,7 +18,7 @@ from noj.model import (
 )
 from noj.tools.japanese_parser import JapaneseParser
 import noj.tools.entry_unformatter as uf
-from noj.importers.abstract_importer import AbstractImporterVisitor
+from noj.importers.abstract_importer import AbstractCorpusImporterVisitor
 
 from noj.model.models import Session
 import pdb
@@ -99,7 +99,7 @@ class AnkiWalker(object):
 
             self._media_accept(note, keys, visitor)
 
-            visitor.visit_finish_usage_example()
+            visitor.visit_finish_usage_example(None)
 
     def _media_accept(self, note, keys, visitor):
         if self.sound_field is not None and self.sound_field in keys:
@@ -129,7 +129,7 @@ class AnkiWalker(object):
             self.load_collection()
         return unicode(re.sub("(?i)\.(anki2)$", ".media", self.col.path))
 
-class AnkiImporterVisitor(AbstractImporterVisitor):
+class AnkiImporterVisitor(AbstractCorpusImporterVisitor):
     """Imports Anki deck using visitor pattern."""
     def __init__(self, session, parser, pm):
         super(AnkiImporterVisitor, self).__init__(session, parser)
@@ -163,7 +163,8 @@ class AnkiImporterVisitor(AbstractImporterVisitor):
     def visit_finish_library(self):
         self.lib_id = db.insert_orm_or_replace(self.session, self.lib_obj)
 
-    def visit_finish_usage_example(self):
+    def visit_finish_usage_example(self, number):
+        # number is not used in corpus import
         if self.ue_obj is not None:
             ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
