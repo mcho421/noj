@@ -18,7 +18,7 @@ from noj.model import (
 )
 from noj.tools.japanese_parser import JapaneseParser
 import noj.tools.entry_unformatter as uf
-from noj.importers.abstract_importer import AbstractCorpusImporterVisitor
+from noj.importers.abstract_importer import * # TODO change me
 
 from noj.model.models import Session
 import pdb
@@ -103,7 +103,7 @@ class AnkiWalker(object):
 
     def _media_accept(self, note, keys, visitor):
         if self.sound_field is not None and self.sound_field in keys:
-            sound_text = note.__getitem__(self.sound_field)
+            sound_text = note.__getitem__(self.sound_field) # maybe use getattr(note, self.sound_field)
             for sound_re in soundRegexps:
                 m = re.match(sound_re, sound_text)
                 if m:
@@ -135,64 +135,12 @@ class AnkiImporterVisitor(AbstractCorpusImporterVisitor):
         super(AnkiImporterVisitor, self).__init__(session, parser)
         self.pm = pm
         self.media_dir = None
-        self.ue_list_id = db_constants.KNOWN_EXAMPLES_ID
-        # To reduce morpheme lookups
-        self.morpheme_count = dict() # morpheme-id -> absolute count
 
     def get_import_version(self):
         return __version__
 
     def visit_collection(self, col):
         self.media_dir = re.sub("(?i)\.(anki2)$", ".media", col.path)
-
-    def visit_library(self, lib_name):
-        """Imports library into database.
-
-        Performs an update or create operation when importing the library.
-        Returns id.
-        """
-        # Update or create UE library
-        query = self.session.query(models.Library).filter(models.Library.name==lib_name)
-        self.lib_obj = query.first()
-        if self.lib_obj is None:
-            self.lib_obj = models.Library(type_id=db_constants.LIB_TYPES_TO_ID['CORPUS'])
-            self.lib_obj.name = lib_name
-
-        self.lib_obj.import_version = self.get_import_version()
-
-    def visit_finish_library(self):
-        self.lib_id = db.insert_orm_or_replace(self.session, self.lib_obj)
-
-    def visit_finish_usage_example(self, number):
-        # number is not used in corpus import
-        if self.ue_obj is not None:
-            ue_id, new = db.insert_orm(self.session, self.ue_obj)
-
-            # copy the sound and image files if new
-            if new:
-                self._copy_media(self.ue_obj)
-
-            # if its a new expression, should be able to short circuit
-            self._stage_morpheme_counts(self.ue_obj.expression_id)
-
-            # Insert usage example into usage example list, no need to retrieve tuple
-            db.insert_many_core(self.session, models.ue_part_of_list, [{
-                                'ue_list_id':self.ue_list_id,
-                                'usage_example_id':ue_id}])
-
-
-    def visit_finish(self):
-        # Update counts
-        morpheme_count_updater = models.Morpheme.__table__.\
-            update().where(models.Morpheme.__table__.c.id==bindparam('m_id')).\
-            values(expr_count=bindparam('new_count'))
-
-        morpheme_count_tuples = list()
-        for morpheme_id, count in self.morpheme_count.items():
-            morpheme_count_tuples.append({'m_id':morpheme_id, 'new_count':count})
-            
-        if morpheme_count_tuples:
-            self.session.execute(morpheme_count_updater, morpheme_count_tuples)
 
     def _copy_media(self, ue_obj):
         if ue_obj.sound is not None:
@@ -212,32 +160,12 @@ class AnkiImporterVisitor(AbstractCorpusImporterVisitor):
             except IOError:
                pass
 
-    def _stage_morpheme_counts(self, expression_id):
-        # Only stages morphemes from new expressions to be inserted to the list
-        # Note: this should be done before mapping the expression to the list
-        usage_examples  = models.UsageExample.__table__
-        expression_consists_of = models.ExpressionConsistsOf.__table__
-        morphemes = models.Morpheme.__table__
-        ue_part_of_list = models.ue_part_of_list
 
-        # Count number of times expression appears in list
-        s = select([func.count(usage_examples.c.id)], 
-            from_obj=[usage_examples.join(ue_part_of_list)],
-            whereclause=and_(ue_part_of_list.c.ue_list_id==self.ue_list_id,
-                             usage_examples.c.expression_id==expression_id))
-        num_same_expressions = self.session.execute(s).first()[0]
-
-        # Increment counts if expression not in list
-        if num_same_expressions == 0:
-            s = select([morphemes], 
-                from_obj=[expression_consists_of.join(morphemes)], 
-                whereclause=expression_consists_of.c.expression_id==expression_id)
-            for m in self.session.execute(s):
-                if m.id in self.morpheme_count:
-                    self.morpheme_count[m.id] += 1
-                else:
-                    self.morpheme_count[m.id] = (m.expr_count or 0) + 1
-        
+def create_anki_sync_visitor(session, parser, pm):
+    importer = AnkiImporterVisitor(session, parser, pm)
+    importer = UpdateImporterDecorator(importer)
+    importer = IntoKnownImporterDecorator(importer)
+    return importer
 
 def main():
     from sqlalchemy import create_engine
@@ -264,7 +192,7 @@ def main():
         expression_field='Sentence - Kanji', meaning_field='Sentence - English',
         sound_field='Sentence - Audio')
     parser = JapaneseParser()
-    visitor = AnkiImporterVisitor(session, parser, pm)
+    visitor = create_anki_sync_visitor(session, parser, pm)
     print importer._get_media_folder_path()
 
     pbar = pb.ProgressBar(widgets=widgets, maxval=len(importer)).start()

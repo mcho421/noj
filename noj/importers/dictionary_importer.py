@@ -59,11 +59,9 @@ class DictionaryWalker(object):
                     yield f.tell()
 
                 elif elem.tag == dictionary_meta_tag:
-                    visitor.visit_library()
-
                     # Name
                     name_xml = elem.find(NAMESPACE_PREFIX + 'name')
-                    visitor.visit_library_name(name_xml.text)
+                    visitor.visit_library(name_xml.text)
 
                     # Dump version
                     dump_version_xml = elem.find(NAMESPACE_PREFIX + 'dump_version')

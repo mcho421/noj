@@ -8,6 +8,7 @@ from noj.model import (
     db_constants,
 )
 import noj.tools.entry_unformatter as uf
+from sqlalchemy.sql import and_, select, func, bindparam
 
 
 class AbstractImporterVisitor(object):
@@ -27,13 +28,11 @@ class AbstractImporterVisitor(object):
     def get_import_version(self):
         return None
 
-    def visit_library(self):
+    def visit_library(self, name):
         self.lib_obj = models.Library(type_id=db_constants.LIB_TYPES_TO_ID['DICTIONARY'],
-                                      import_version=self.get_import_version())
+                                      import_version=self.get_import_version(),
+                                      name=name)
         self.lib_id = None
-
-    def visit_library_name(self, name):
-        self.lib_obj.name = name
 
     def visit_library_dump_version(self, dump_version):
         self.lib_obj.dump_version = dump_version
@@ -84,6 +83,9 @@ class AbstractImporterVisitor(object):
         pass
 
     def visit_finish(self):
+        pass
+
+    def _copy_media(self, ue_obj):
         pass
 
     def _import_expression(self, expression):
@@ -137,6 +139,7 @@ class AbstractDictionaryImporterVisitor(AbstractImporterVisitor):
         self.def_obj = None
         self.def_id = None
         self.def_id_stack = list()
+        self.ue_id = None
 
     def visit_entry(self):
         # TODO: entry number not set
@@ -241,10 +244,13 @@ class AbstractDictionaryImporterVisitor(AbstractImporterVisitor):
 
     def visit_finish_usage_example(self, number):
         if self.ue_obj is not None:
-            ue_id, new = db.insert_orm(self.session, self.ue_obj)
+            self.ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
-            self.definition_ues.append({'usage_example_id': ue_id, 'definition_id': self.def_id,
+            self.definition_ues.append({'usage_example_id': self.ue_id, 'definition_id': self.def_id,
                                    'number': number})
+
+            if new:
+                self._copy_media(self.ue_obj)
 
 class AbstractCorpusImporterVisitor(AbstractImporterVisitor):
     __metaclass__ = abc.ABCMeta
@@ -255,6 +261,107 @@ class AbstractCorpusImporterVisitor(AbstractImporterVisitor):
     def visit_finish_usage_example(self, number):
         # number parameter is not used in corpus import
         if self.ue_obj is not None:
-            ue_id, new = db.insert_orm(self.session, self.ue_obj)
+            self.ue_id, new = db.insert_orm(self.session, self.ue_obj)
+
+            # copy the sound and image files if new
+            if new:
+                self._copy_media(self.ue_obj)
+
+# For corpus only
+class UpdateImporterDecorator(object):
+    """docstring for UpdateImporterDecorator"""
+    def __init__(self, importer):
+        super(UpdateImporterDecorator, self).__init__()
+        self.importer = importer
+
+    def __getattr__(self, name):
+        return getattr(self.importer, name)
+
+    def visit_library(self, lib_name):
+        """Imports library into database.
+
+        Performs an update or create operation when importing the library.
+        Returns id.
+        """
+        # Update or create UE library
+        query = self.session.query(models.Library).filter(models.Library.name==lib_name)
+        self.importer.lib_obj = query.first()
+        if self.importer.lib_obj is None:
+            self.importer.visit_library(lib_name)
+
+        self.importer.lib_obj.import_version = self.importer.get_import_version()
+
+    def visit_finish_library(self):
+        self.importer.lib_id = db.insert_orm_or_replace(self.importer.session, self.importer.lib_obj)
+
+# generalize to arbitrary list
+class IntoKnownImporterDecorator(object):
+    """docstring for IntoKnownImporterDecorator"""
+    def __init__(self, importer):
+        super(IntoKnownImporterDecorator, self).__init__()
+        self.importer = importer
+        self.ue_list_id = db_constants.KNOWN_EXAMPLES_ID
+        # To reduce morpheme lookups
+        self.morpheme_count = dict() # morpheme-id -> absolute count
+
+    def __getattr__(self, name):
+        return getattr(self.importer, name)
+
+    def visit_finish_usage_example(self, number):
+        # number is not used in corpus import
+        if self.importer.ue_obj is not None: # TODO: get rid of this if statement
+            self.importer.visit_finish_usage_example(number)
+
+            # if its a new expression, should be able to short circuit
+            self._stage_morpheme_counts(self.importer.ue_obj.expression_id)
+
+            # Insert usage example into usage example list, no need to retrieve tuple
+            db.insert_many_core(self.importer.session, models.ue_part_of_list, [{
+                                'ue_list_id':self.ue_list_id,
+                                'usage_example_id':self.importer.ue_id}])
+
+    def visit_finish(self):
+        self.importer.visit_finish()
+
+        # Update counts
+        morpheme_count_updater = models.Morpheme.__table__.\
+            update().where(models.Morpheme.__table__.c.id==bindparam('m_id')).\
+            values(expr_count=bindparam('new_count'))
+
+        morpheme_count_tuples = list()
+        for morpheme_id, count in self.morpheme_count.items():
+            morpheme_count_tuples.append({'m_id':morpheme_id, 'new_count':count})
+            
+        if morpheme_count_tuples:
+            self.importer.session.execute(morpheme_count_updater, morpheme_count_tuples)
+
+    def _stage_morpheme_counts(self, expression_id):
+        # Only stages morphemes from new expressions to be inserted to the list
+        # Note: this should be done before mapping the expression to the list
+        usage_examples  = models.UsageExample.__table__
+        expression_consists_of = models.ExpressionConsistsOf.__table__
+        morphemes = models.Morpheme.__table__
+        ue_part_of_list = models.ue_part_of_list
+
+        # Count number of times expression appears in list
+        s = select([func.count(usage_examples.c.id)], 
+            from_obj=[usage_examples.join(ue_part_of_list)],
+            whereclause=and_(ue_part_of_list.c.ue_list_id==self.ue_list_id,
+                             usage_examples.c.expression_id==expression_id))
+        num_same_expressions = self.importer.session.execute(s).first()[0]
+
+        # Increment counts if expression not in list
+        if num_same_expressions == 0:
+            s = select([morphemes], 
+                from_obj=[expression_consists_of.join(morphemes)], 
+                whereclause=expression_consists_of.c.expression_id==expression_id)
+            for m in self.importer.session.execute(s):
+                if m.id in self.morpheme_count:
+                    self.morpheme_count[m.id] += 1
+                else:
+                    self.morpheme_count[m.id] = (m.expr_count or 0) + 1
+        
+
+
 
 
