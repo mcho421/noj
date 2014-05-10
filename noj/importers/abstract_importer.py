@@ -243,14 +243,13 @@ class AbstractDictionaryImporterVisitor(AbstractImporterVisitor):
                                morpheme_list)
 
     def visit_finish_usage_example(self, number):
-        if self.ue_obj is not None:
-            self.ue_id, new = db.insert_orm(self.session, self.ue_obj)
+        self.ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
-            self.definition_ues.append({'usage_example_id': self.ue_id, 'definition_id': self.def_id,
-                                   'number': number})
+        self.definition_ues.append({'usage_example_id': self.ue_id, 'definition_id': self.def_id,
+                               'number': number})
 
-            if new:
-                self._copy_media(self.ue_obj)
+        if new:
+            self._copy_media(self.ue_obj)
 
 class AbstractCorpusImporterVisitor(AbstractImporterVisitor):
     __metaclass__ = abc.ABCMeta
@@ -260,12 +259,11 @@ class AbstractCorpusImporterVisitor(AbstractImporterVisitor):
 
     def visit_finish_usage_example(self, number):
         # number parameter is not used in corpus import
-        if self.ue_obj is not None:
-            self.ue_id, new = db.insert_orm(self.session, self.ue_obj)
+        self.ue_id, new = db.insert_orm(self.session, self.ue_obj)
 
-            # copy the sound and image files if new
-            if new:
-                self._copy_media(self.ue_obj)
+        # copy the sound and image files if new
+        if new:
+            self._copy_media(self.ue_obj)
 
 # For corpus only
 class UpdateImporterDecorator(object):
@@ -308,17 +306,15 @@ class IntoKnownImporterDecorator(object):
         return getattr(self.importer, name)
 
     def visit_finish_usage_example(self, number):
-        # number is not used in corpus import
-        if self.importer.ue_obj is not None: # TODO: get rid of this if statement
-            self.importer.visit_finish_usage_example(number)
+        self.importer.visit_finish_usage_example(number)
 
-            # if its a new expression, should be able to short circuit
-            self._stage_morpheme_counts(self.importer.ue_obj.expression_id)
+        # if its a new expression, should be able to short circuit
+        self._stage_morpheme_counts(self.importer.ue_obj.expression_id)
 
-            # Insert usage example into usage example list, no need to retrieve tuple
-            db.insert_many_core(self.importer.session, models.ue_part_of_list, [{
-                                'ue_list_id':self.ue_list_id,
-                                'usage_example_id':self.importer.ue_id}])
+        # Insert usage example into usage example list, no need to retrieve tuple
+        db.insert_many_core(self.importer.session, models.ue_part_of_list, [{
+                            'ue_list_id':self.ue_list_id,
+                            'usage_example_id':self.importer.ue_id}])
 
     def visit_finish(self):
         self.importer.visit_finish()
