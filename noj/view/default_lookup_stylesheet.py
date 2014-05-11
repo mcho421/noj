@@ -35,7 +35,7 @@ h2 {
 ruby {
   /*display:inline-table;*/
   text-align:center;
-  white-space:nowrap;
+  /*white-space:nowrap;*/
   text-indent:0;
   margin:0;
   vertical-align:bottom;
