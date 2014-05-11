@@ -352,8 +352,8 @@ class UEResult(object):
         return dedent(u"""\
             <div id="ue">
             <div id="score"><b>{escore}</b></div>
-            <div id="content">{expr}<br/>
-            {meaning}<br/>
+            <div id="content"><font id="expression">{expr}<br/></font>
+            <font id="meaning">{meaning}<br/></font>
             <font id="source">{source}</font>
             </div>
             </div>""").format(

@@ -4,6 +4,7 @@ import sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtWebKit import *
+from webview import NOJWebView
 
 stylesheet = """\
 * {
@@ -15,7 +16,7 @@ class LookupGUI(QWidget):
 	def __init__(self, parent=None):
 		super(LookupGUI, self).__init__(parent)
 		self.search_bar = QLineEdit()
-		self.search_results = QWebView()
+		self.search_results = NOJWebView()
 		layout = QVBoxLayout()
 		layout.addWidget(self.search_bar)
 		layout.addWidget(self.search_results)
