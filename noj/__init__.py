@@ -8,6 +8,8 @@ from PyQt4.QtGui import *
 from noj.model import (db, db_constants, models)
 from noj.model.profiles import ProfileManager
 from noj import controller
+from noj.controller.lookup_command import LookupCommand
+from noj.controller.startup_command import StartupCommand
 from noj.view.lookup_gui import LookupGUI
 
 from noj.model.models import (
@@ -30,8 +32,8 @@ class AppFacade(Facade):
     def initializeController(self):
         super(AppFacade, self).initializeController()
 
-        super(AppFacade, self).registerCommand(AppFacade.STARTUP, controller.StartupCommand)
-        super(AppFacade, self).registerCommand(AppFacade.LOOKUP, controller.LookupCommand)
+        super(AppFacade, self).registerCommand(AppFacade.STARTUP, StartupCommand)
+        super(AppFacade, self).registerCommand(AppFacade.LOOKUP, LookupCommand)
 
 def init_db(engine):
     Session.configure(bind=engine)
