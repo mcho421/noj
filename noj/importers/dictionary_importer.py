@@ -48,6 +48,7 @@ class DictionaryWalker(object):
     def import_generator(self, visitor):
         entry_tag = NAMESPACE_PREFIX + 'entry'
         dictionary_meta_tag = NAMESPACE_PREFIX + 'dictionary_meta'
+        entry_number = 1
 
         with open(self.importable_path, 'rb') as f:
             context = etree.iterparse(f, tag=(entry_tag, dictionary_meta_tag))
@@ -55,7 +56,8 @@ class DictionaryWalker(object):
             for action, elem in context:
                 if elem.tag == entry_tag:
                     entry_xml = elem
-                    self._entry_accept(entry_xml, visitor)
+                    self._entry_accept(entry_xml, visitor, entry_number)
+                    entry_number += 1
                     yield f.tell()
 
                 elif elem.tag == dictionary_meta_tag:
@@ -98,8 +100,8 @@ class DictionaryWalker(object):
             return json.dumps(extra_dict)
         return None
 
-    def _entry_accept(self, entry_xml, visitor):
-        visitor.visit_entry()
+    def _entry_accept(self, entry_xml, visitor, number):
+        visitor.visit_entry(number)
 
         # Import entry format
         self.eformat = entry_xml.get('format') or 'J-E1'

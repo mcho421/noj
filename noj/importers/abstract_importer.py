@@ -141,9 +141,8 @@ class AbstractDictionaryImporterVisitor(AbstractImporterVisitor):
         self.def_id_stack = list()
         self.ue_id = None
 
-    def visit_entry(self):
-        # TODO: entry number not set
-        self.entry_obj = models.Entry(library_id=self.lib_id)
+    def visit_entry(self, number):
+        self.entry_obj = models.Entry(library_id=self.lib_id, number=number)
         self.entry_id = None
         self.last_kana_text = None
 
