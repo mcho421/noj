@@ -188,8 +188,9 @@ class AbstractDictionaryImporterVisitor(AbstractImporterVisitor):
         entry_kanji = list()
         if self.eformat == 'J-J1':
             for i, kanji_text in enumerate(kanji_list):
+                assert(self.last_kana_text is not None)
                 kanji_id = db.insert(self.session, models.Morpheme, 
-                    morpheme=uf.unformat_jj1_kanji(kanji_text, self.last_kana_text), # TODO: assert(last_kana_text is not None)
+                    morpheme=uf.unformat_jj1_kanji(kanji_text, self.last_kana_text),
                     type_id=db_constants.MORPHEME_TYPES_TO_ID['KANJI_ENTRY'],
                     status_id=db_constants.MORPHEME_STATUSES_TO_ID['AUTO'])[0]
                 entry_kanji.append({'entry_id':self.entry_id, 'kanji_id':kanji_id, 'number':i+1})
@@ -291,7 +292,7 @@ class UpdateImporterDecorator(object):
     def visit_finish_library(self):
         self.importer.lib_id = db.insert_orm_or_replace(self.importer.session, self.importer.lib_obj)
 
-# generalize to arbitrary list
+# MAYBE: generalize to arbitrary list
 class IntoKnownImporterDecorator(object):
     """docstring for IntoKnownImporterDecorator"""
     def __init__(self, importer):
