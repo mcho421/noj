@@ -7,6 +7,7 @@ from PyQt4.QtWebKit import *
 import lxml.html
 from lxml import etree
 from lxml.html.clean import clean_html
+import resources
 
 SCRIPT_TAG = """\
 $(document).on('copy', function (e) {
@@ -22,11 +23,11 @@ START_HTML = """\
 <html>
 <head>
 <meta charset="UTF-8">
-<script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="qrc:/jquery.js"></script>
 <script>{}</script>
 </head>
 <body>
-""".format(SCRIPT_TAG) #TODO: load jquery from local
+""".format(SCRIPT_TAG)
 
 END_HTML = """\
 </body>

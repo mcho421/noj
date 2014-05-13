@@ -1,0 +1,5 @@
+<!DOCTYPE RCC><RCC version="1.0">
+ <qresource>
+     <file alias="jquery.js">javascript/jquery-1.10.2.js</file>
+ </qresource>
+ </RCC>
