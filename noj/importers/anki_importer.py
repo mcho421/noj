@@ -18,7 +18,11 @@ from noj.model import (
 )
 from noj.tools.japanese_parser import JapaneseParser
 import noj.tools.entry_unformatter as uf
-from noj.importers.abstract_importer import * # TODO change me
+from noj.importers.abstract_importer import (
+    AbstractCorpusImporterVisitor,
+    UpdateImporterDecorator, 
+    IntoKnownImporterDecorator,
+)
 
 from noj.model.models import Session
 import pdb
