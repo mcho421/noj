@@ -11,7 +11,7 @@ You can import dictionaries like EDICT and Daijirin so that all your example sen
 You can also import your Anki flashcard deck. This means the program can determine what vocabulary you 
 already know and give difficulty scores to the example sentences relative to your knowledge.
 All that's needed to get example sentences is to do a single lookup of a word you want to learn.
-This makes sentence mining are much more efficient process, meaning you have more time to learn and enjoy the language.
+This makes sentence mining a much more efficient process, meaning you have more time to learn and enjoy the language.
 
 Compiling
 ---------
