@@ -19,3 +19,7 @@ Compiling
  - Install [Qt4](http://qt-project.org/) and [PyQt4](http://www.riverbankcomputing.com/software/pyqt/intro) ([PyQt4 installation guide](http://www.pythoncentral.io/install-pyside-pyqt-on-windows-mac-linux/))
  - Install Python libraries with ```sudo pip install -r requirements.txt```
  - Run ```python noj/__init__.py```
+
+Licence
+-------
+[GNU General Public Licence v3](http://www.gnu.org/copyleft/gpl.html)
