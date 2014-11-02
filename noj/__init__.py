@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
-from sqlalchemy import create_engine
+import logging
+
 from puremvc.patterns.facade import Facade
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from noj.model import (db, db_constants, models)
-from noj.model.profiles import ProfileManager
+from sqlalchemy import create_engine
+
 from noj import controller
 from noj.controller.lookup_command import LookupCommand
 from noj.controller.startup_command import StartupCommand
+from noj.model import (db, db_constants, models)
+from noj.model.models import (Session, Base)
+from noj.model.profiles import ProfileManager
 from noj.view.lookup_gui import LookupGUI
-
-from noj.model.models import (
-    Session, 
-    Base,
-)
 
 class AppFacade(Facade):
 
@@ -66,8 +65,7 @@ def init_db(engine):
 
 # from http://www.riverbankcomputing.com/pipermail/pyqt/2009-May/022961.html
 def excepthook(excType, excValue, tracebackobj):
-    """
-    Global function to catch unhandled exceptions.
+    """Global function to catch unhandled exceptions.
     
     @param excType exception type
     @param excValue exception value
@@ -109,12 +107,12 @@ def excepthook(excType, excValue, tracebackobj):
 
 def main():
     sys.excepthook = excepthook
+    pm = ProfileManager()
     # maybe convert_unicode=True?
     # engine = create_engine('sqlite:///:memory:', echo=True)
-    pm = ProfileManager()
     # engine = create_engine('sqlite:///../test.sqlite', echo=True)
     engine = create_engine(pm.database_connect_string(), echo=False)
-    print pm.database_connect_string()
+    logging.info(pm.database_connect_string())
     init_db(engine)
     app = AppFacade.getInstance()
     app.registerProxy(pm)

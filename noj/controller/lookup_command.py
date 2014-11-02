@@ -8,18 +8,18 @@ from functools import partial
 import noj
 
 class LookupCommand(SimpleCommand, ICommand):
-	def execute(self, notification):
-		print 'executing lookup command'
-		search_word = notification.getBody()
-		print 'searching:', search_word
-		lookup_proxy = self.facade.retrieveProxy(AsyncLookup.NAME)
-		lookup_mediator = self.facade.retrieveMediator(LookupMediator.NAME)
-		lookup_mediator.prepareForSearch(search_word)
-		# lookup_callback = lookup_mediator.lookup_done
-		lookup_proxy.lookup_entries(search_word, limit=50)
-		lookup_proxy.lookup_ues_by_entry(search_word, limit=50)
-		lookup_proxy.lookup_ues_by_expression(search_word, limit=50)
-		# self.sendNotification(noj.AppFacade.LOOKUP_DONE, None)
-		# lookup_mediator.test()
-		print 'lookup command done'
+    def execute(self, notification):
+        print 'executing lookup command'
+        search_word = notification.getBody()
+        print 'searching:', search_word
+        lookup_proxy = self.facade.retrieveProxy(AsyncLookup.NAME)
+        lookup_mediator = self.facade.retrieveMediator(LookupMediator.NAME)
+        lookup_mediator.prepareForSearch(search_word)
+        # lookup_callback = lookup_mediator.lookup_done
+        lookup_proxy.lookup_entries(search_word, limit=50)
+        lookup_proxy.lookup_ues_by_entry(search_word, limit=50)
+        lookup_proxy.lookup_ues_by_expression(search_word, limit=50)
+        # self.sendNotification(noj.AppFacade.LOOKUP_DONE, None)
+        # lookup_mediator.test()
+        print 'lookup command done'
 
