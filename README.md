@@ -20,6 +20,7 @@ Compiling
  - Install Python libraries with ```sudo pip install -r requirements.txt```
  - Compile resources with ```./make_resources.sh```
  - Run ```python noj/__init__.py```
+ - If you would like the JMDict/EDICT dictionary, [download the database](   https://drive.google.com/file/d/0BxolPhoJ07QdY0tDT0ltckRyM00/view?usp=sharing) and move it to `Documents/Natural Order Japanese`
 
 TODO
 ----
