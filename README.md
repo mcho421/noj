@@ -12,3 +12,10 @@ You can also import your Anki flashcard deck. This means the program can determi
 already know and give difficulty scores to the example sentences relative to your knowledge.
 All that's needed to get example sentences is to do a single lookup of a word you want to learn.
 This makes sentence mining are much more efficient process, meaning you have more time to learn and enjoy the language.
+
+Compiling
+---------
+ - Install [MeCab](https://code.google.com/p/mecab/) and the Python binding ([MeCab installation guide](https://github.com/mcho421/noj/blob/master/installing-mecab-python.md))
+ - Install [Qt4](http://qt-project.org/) and [PyQt4](http://www.riverbankcomputing.com/software/pyqt/intro) ([PyQt4 installation guide](http://www.pythoncentral.io/install-pyside-pyqt-on-windows-mac-linux/))
+ - Install Python libraries with ```sudo pip install -r requirements.txt```
+ - Run ```python noj/__init__.py```
