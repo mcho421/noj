@@ -21,6 +21,16 @@ Compiling
  - Compile resources with ```./make_resources.sh```
  - Run ```python noj/__init__.py```
 
+TODO
+----
+The Anki importing isn't available on the GUI yet. For the time being, you can do the following:
+ - Edit ```noj/importers/anki_importer.py``` with your Anki Deck settings
+ - Run `python noj/importers/anki_importer.py`
+
+See the following projects for importing additional Sentence Libraries:
+ - https://github.com/mcho421/noj_dumpers
+ - https://github.com/mcho421/noj_converters
+
 Licence
 -------
 [GNU General Public Licence v3](http://www.gnu.org/copyleft/gpl.html)
