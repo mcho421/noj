@@ -23,3 +23,7 @@ Compiling
 Licence
 -------
 [GNU General Public Licence v3](http://www.gnu.org/copyleft/gpl.html)
+
+Contributors
+------------
+[Mathew Chong](https://github.com/mcho421) (mathewchong7@gmail.com)
