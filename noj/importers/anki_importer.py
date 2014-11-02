@@ -177,8 +177,8 @@ def main():
     from noj.model.profiles import ProfileManager
     from noj.tools.check_platform import isWin, isMac
     pm = ProfileManager()
-    engine = create_engine('sqlite:///../../test.sqlite', echo=False)
-    # engine = create_engine(pm.database_connect_string(), echo=False)
+    #engine = create_engine('sqlite:///../../test.sqlite', echo=False)
+    engine = create_engine(pm.database_connect_string(), echo=False)
     init_db(engine)
     if isWin:
         collection_path = 'C:\Users\Mathew\Documents\Anki\User 1\collection.anki2'
