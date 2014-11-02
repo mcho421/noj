@@ -1,5 +1,6 @@
 Natural Order Japanese
 ======================
+![Screenshot of lookup feature](https://cloud.githubusercontent.com/assets/1934920/4873818/1c72537c-6227-11e4-893d-d2117fa18b0a.png)
 If you're learning Japanese, you might have come across the infamous Sentence Mining approach. 
 This involves collecting and reviewing thousands of example sentences in a flashcard/SRS program.
 Where are you going to get these example sentences?
