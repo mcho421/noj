@@ -40,4 +40,4 @@ Licence
 
 Contributors
 ------------
-[Mathew Chong](https://github.com/mcho421) (mathewchong7@gmail.com)
+[Mathew Chong](https://github.com/mcho421) (mathewchong.dev@gmail.com)
